@@ -3,33 +3,32 @@
 {% block title %}{{ essay.title }}: changes in v{{ version.number }} · {{ site.title }}{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block main %}
-<header class="page-header">
-  <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a> · <a href="{{ essay.url }}history/">History</a></p>
-  <h1>Changes in v{{ version.number }}</h1>
-  <p class="meta">
+<div class="sheet">
+  <header class="column page-header">
+    <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a>, <a href="{{ essay.url }}history/">history</a></p>
+    <h1>What changed in version {{ version.number }}</h1>
+    <p class="dek">{{ version.note }}</p>
+  </header>
+
+  <aside class="margin margin-notes" aria-label="About this change">
     <time datetime="{{ version.date.isoformat() }}">{{ version.date|date }}</time>
-    · compared with <a href="{{ essay.url }}v/{{ previous.number }}/">v{{ previous.number }}</a>
-    · <a href="{{ essay.url }}v/{{ version.number }}/">read v{{ version.number }}</a>
-  </p>
-</header>
+    <a href="{{ essay.url }}v/{{ previous.number }}/">From version {{ previous.number }}</a>
+    <a href="{{ essay.url }}v/{{ version.number }}/">To version {{ version.number }}</a>
+    <span>{{ diff.removed }} word{{ "" if diff.removed == 1 else "s" }} removed, {{ diff.added }} added</span>
+  </aside>
 
-<section class="change-note" aria-label="Change note">
-  <p>{{ version.note }}</p>
-</section>
-
-<p class="diff-legend muted">
-  <del>Removed text</del> · <ins>added text</ins>
-  · {{ diff.removed }} word{{ "" if diff.removed == 1 else "s" }} removed, {{ diff.added }} added.
-  {% if previous.title != version.title %}Title changed from “{{ previous.title }}”.{% endif %}
-</p>
-
-<div class="diff">
-{% if diff.added == 0 and diff.removed == 0 %}
-  <p class="muted">The text is unchanged; only the note's properties were edited.</p>
-{% else %}
-{% for block in diff.blocks %}
-  <p class="diff-{{ block.kind }}">{{ block.html|safe }}</p>
-{% endfor %}
-{% endif %}
+  <div class="column">
+    <p class="diff-legend"><del>Removed text</del> and <ins>added text</ins> are marked.
+      {% if previous.title != version.title %}The title changed from “{{ previous.title }}”.{% endif %}</p>
+    <div class="diff">
+    {% if diff.added == 0 and diff.removed == 0 %}
+      <p class="muted">The text is unchanged; only the note's properties were edited.</p>
+    {% else %}
+    {% for block in diff.blocks %}
+      <p class="diff-{{ block.kind }}">{{ block.html|safe }}</p>
+    {% endfor %}
+    {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock %}

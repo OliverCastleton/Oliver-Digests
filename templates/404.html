@@ -1,6 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Not found · {{ site.title }}{% endblock %}
+{% block title %}Page not found · {{ site.title }}{% endblock %}
 {% block main %}
-<h1>Not found</h1>
-<p>There's nothing at this address. <a href="{{ base }}/">Go to the essays.</a></p>
+<div class="sheet">
+  <header class="column page-header">
+    <h1>This page isn’t here</h1>
+    <p class="dek">It may have moved, or the link has a typo.</p>
+  </header>
+  <div class="column">
+    <p><a href="{{ base }}/">Go to the homepage</a> or <a class="search-open" href="{{ base }}/search/">search the site</a>.</p>
+  </div>
+</div>
 {% endblock %}

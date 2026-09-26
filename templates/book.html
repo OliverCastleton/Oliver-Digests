@@ -1,38 +1,35 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m with context %}
 {% set section = "library" %}
 {% block title %}{{ book.title }}{% if book.author %} by {{ book.author }}{% endif %} · {{ site.title }}{% endblock %}
 {% block description %}{{ book.description or ("Notes on " ~ book.title) }}{% endblock %}
 {% block main %}
-<article>
-  <header class="page-header book-header">
-    {% if cover %}<img class="cover cover-large" src="{{ cover }}" alt="Cover of {{ book.title }}" width="120">{% endif %}
-    <div>
-      <p class="kicker"><a href="{{ base }}/library/">Library</a></p>
-      <h1>{{ book.title }}</h1>
-      {% if book.author %}<p class="dek">{{ book.author }}{% if book.published %}, {{ book.published }}{% endif %}</p>{% endif %}
-      {% if book.rating or book.finished %}
-      <p class="meta">
-        {% if book.rating %}<span class="stars" role="img" aria-label="Rated {{ book.rating }} out of 5">{{ book.stars }}</span>{% endif %}
-        {% if book.rating and book.finished %} · {% endif %}
-        {% if book.finished %}<time datetime="{{ book.finished.isoformat() }}">Finished {{ book.finished|date }}</time>{% endif %}
-      </p>
-      {% endif %}
-    </div>
+<article class="sheet">
+  <aside class="margin book-margin" aria-label="About this book">
+    {{ m.cover(book, cover, "large") }}
+    {% if book.rating %}{{ m.stars(book) }}{% endif %}
+    {% if book.finished %}<span>Finished <time datetime="{{ book.finished.isoformat() }}">{{ book.finished|date }}</time></span>{% endif %}
+  </aside>
+
+  <header class="column page-header">
+    <p class="kicker"><a href="{{ base }}/library/">Library</a></p>
+    <h1>{{ book.title }}</h1>
+    {% if book.author %}<p class="dek">{{ book.author }}{% if book.published %}, {{ book.published }}{% endif %}</p>{% endif %}
   </header>
 
-  <div class="prose">
+  <div class="column prose">
 {{ content|safe }}
   </div>
 
-  <footer class="page-footer">
+  <footer class="column page-footer">
     {% if book.tags %}
     <p class="tags">
-      {% for tag in book.tags %}<a href="{{ base }}/tags/{{ tag|tag_slug }}/">#{{ tag }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+      {% for tag in book.tags %}<a href="{{ base }}/tags/{{ tag|tag_slug }}/">{{ tag }}</a>{% endfor %}
     </p>
     {% endif %}
     <p>
       <a class="email-link" href="{{ mailto }}">Email me about this book</a>
-      <span class="email-hint muted" hidden>(including the passage you selected)</span>
+      <span class="email-hint muted" hidden>with the passage you selected</span>
     </p>
   </footer>
 </article>

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% set section = "search" %}
+{% block title %}Search · {{ site.title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block main %}
+<div class="sheet">
+  <header class="column page-header">
+    <h1>Search</h1>
+  </header>
+  <div class="column search-page">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input class="search-input" type="search" placeholder="Search essays and book notes" autocomplete="off" spellcheck="false" aria-label="Search essays and book notes">
+    </div>
+    <ol class="search-results" aria-live="polite"></ol>
+    <noscript><p class="muted">Search needs JavaScript. You can browse the <a href="{{ base }}/essays/">essays</a>, the <a href="{{ base }}/library/">library</a> and the <a href="{{ base }}/tags/">topics</a> instead.</p></noscript>
+  </div>
+</div>
+{% endblock %}

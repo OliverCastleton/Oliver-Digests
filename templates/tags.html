@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% set section = "tags" %}
-{% block title %}Tags · {{ site.title }}{% endblock %}
+{% block title %}Topics · {{ site.title }}{% endblock %}
 {% block main %}
-<header class="page-header"><h1>Tags</h1></header>
-{% if tags %}
-<ul class="tag-cloud">
-{% for tag, tagged in tags %}
-  <li><a href="{{ base }}/tags/{{ tag|tag_slug }}/">#{{ tag }}</a> <span class="muted">{{ tagged.essays|length + tagged.books|length }}</span></li>
-{% endfor %}
-</ul>
-{% else %}
-<p class="muted">No tags yet.</p>
-{% endif %}
+<div class="sheet">
+  <header class="column page-header"><h1>Topics</h1></header>
+  <div class="column">
+  {% if tags %}
+    <ul class="topics topics-large">
+    {% for tag, tagged in tags %}
+      <li><a href="{{ base }}/tags/{{ tag|tag_slug }}/">{{ tag }}</a> <span class="count">{{ tagged.essays|length + tagged.books|length }}</span></li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No topics yet. Add tags to an essay or book to create one.</p>
+  {% endif %}
+  </div>
+</div>
 {% endblock %}

@@ -10,41 +10,41 @@
 {% if not is_current %}<meta name="robots" content="noindex">{% endif %}
 {% endblock %}
 {% block main %}
-<article>
-  {% if not is_current %}
-  <p class="notice">
-    This is <strong>version {{ version.number }}</strong> of this essay, from
-    <time datetime="{{ version.date.isoformat() }}">{{ version.date|date }}</time>.
-    <a href="{{ essay.url }}">Read the current version</a>{% if version.number > 1 %},
-    or <a href="{{ essay.url }}diff/{{ version.number }}/">see what changed in v{{ version.number }}</a>{% endif %}.
-  </p>
-  {% endif %}
-
-  <header class="page-header">
-    <h1>{{ title }}</h1>
-    {% if essay.description %}<p class="dek">{{ essay.description }}</p>{% endif %}
-    <p class="meta">
-      <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
-      · {{ essay.minutes }} min read
-      {% if is_current and essay.has_history %}
-      · <a href="{{ essay.url }}history/">v{{ version.number }}, revised {{ version.date|date }}</a>
-      {% endif %}
+<article class="sheet">
+  <header class="column page-header">
+    {% if not is_current %}
+    <p class="notice">
+      You’re reading version {{ version.number }} of this essay, from
+      <time datetime="{{ version.date.isoformat() }}">{{ version.date|date }}</time>.
+      <a href="{{ essay.url }}">Read the current version</a>{% if version.number > 1 %}
+      or <a href="{{ essay.url }}diff/{{ version.number }}/">see what changed</a>{% endif %}.
     </p>
+    {% endif %}
+    <h1{% if is_current %} style="view-transition-name: e-{{ essay.slug }}"{% endif %}>{{ title }}</h1>
+    {% if essay.description %}<p class="dek">{{ essay.description }}</p>{% endif %}
   </header>
 
-  <div class="prose">
+  <aside class="margin margin-notes" aria-label="About this essay">
+    <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
+    <span>{{ essay.minutes }} minute read</span>
+    {% if is_current and essay.has_history %}
+    <a href="{{ essay.url }}history/">Version {{ version.number }}, revised {{ version.date|date }}</a>
+    {% endif %}
+  </aside>
+
+  <div class="column prose">
 {{ content|safe }}
   </div>
 
-  <footer class="page-footer">
+  <footer class="column page-footer">
     {% if essay.tags %}
     <p class="tags">
-      {% for tag in essay.tags %}<a href="{{ base }}/tags/{{ tag|tag_slug }}/">#{{ tag }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+      {% for tag in essay.tags %}<a href="{{ base }}/tags/{{ tag|tag_slug }}/">{{ tag }}</a>{% endfor %}
     </p>
     {% endif %}
     <p>
       <a class="email-link" href="{{ mailto }}">Email me about this</a>
-      <span class="email-hint muted" hidden>(including the passage you selected)</span>
+      <span class="email-hint muted" hidden>with the passage you selected</span>
     </p>
   </footer>
 </article>

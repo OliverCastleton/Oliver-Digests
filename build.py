@@ -13,10 +13,12 @@ What happens, in order
     3. For each one, read its git history and work out its versions:
          - the first commit in which the note is published is v1;
          - after that, only commits whose message starts with `rev:` add a version.
-    4. Collect book notes (the books folder) for the Library.
+    4. Collect book notes (the books folder) for the Library, and the
+       homepage note (Home.md) for the homepage intro.
     5. Render Markdown to HTML (wikilinks, image embeds, footnotes).
     6. Compute word-level diffs between consecutive versions.
-    7. Write every page into the output folder using the Jinja templates.
+    7. Write every page into the output folder using the Jinja templates,
+       plus search.json, the index the search box reads.
 
 Everything is computed here, at build time. The site needs no server code.
 """
@@ -27,6 +29,7 @@ import argparse
 import datetime as dt
 import difflib
 import html
+import json
 import re
 import shutil
 import subprocess
@@ -77,6 +80,12 @@ def load_config(path: Path, local: bool) -> dict:
     cfg.setdefault("books_folder", "books")
     cfg.setdefault("exclude_folders", ["templates"])
     cfg.setdefault("book_email_subject", "Re: your notes on {title}")
+    cfg.setdefault("home_note", "Home")
+    # Languages offered by the Translate menu: code -> name in that language.
+    cfg.setdefault("translate_languages", {
+        "it": "Italiano", "es": "Español", "fr": "Français", "de": "Deutsch",
+        "pt": "Português", "nl": "Nederlands", "ja": "日本語", "zh": "中文",
+    })
 
     cfg["base_url"] = str(cfg["base_url"]).rstrip("/")
     if local:
@@ -327,9 +336,10 @@ def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
     """Find every published note and build its Essay, including versions."""
     books_dir = vault / cfg["books_folder"]
     essays: list[Essay] = []
+    home = vault / f"{cfg['home_note']}.md"
     for path in vault_notes(vault, cfg):
-        if path.is_relative_to(books_dir):
-            continue  # book notes go to the Library instead
+        if path.is_relative_to(books_dir) or path == home:
+            continue  # book notes go to the Library; Home.md is the homepage
         meta, body = split_frontmatter(path.read_text(encoding="utf-8"), path.relative_to(vault))
         if not is_published(meta):
             continue
@@ -360,7 +370,8 @@ def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
         ))
 
     # Two notes with the same slug would overwrite each other, so stop.
-    reserved = {"tags", "library", "attachments", "404.html", "index.html", ".nojekyll"}
+    reserved = {"essays", "library", "tags", "search", "attachments",
+                "404.html", "index.html", "search.json", ".nojekyll"}
     reserved |= {p.name for p in (HERE / "static").iterdir()}
     seen: dict[str, Path] = {}
     for essay in essays:
@@ -401,6 +412,12 @@ class Book:
     @property
     def has_notes(self) -> bool:
         return bool(self.body.strip())
+
+    @property
+    def tone(self) -> int:
+        """0-4: which cloth colour a book without a cover image gets.
+        Derived from the title, so it stays the same on every build."""
+        return sum(map(ord, self.title)) % 5
 
     @property
     def stars(self) -> str:
@@ -708,6 +725,35 @@ def diff_bodies(old_body: str, new_body: str) -> dict:
 # Pages
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Search index
+# ---------------------------------------------------------------------------
+# search.json lists every essay and book with its plain text. static/search.js
+# downloads it the first time someone searches and matches in the browser.
+
+def html_to_text(html_text: str) -> str:
+    """Rendered HTML -> plain text, for the search index."""
+    text = re.sub(r"<(script|style)\b.*?</\1>", " ", html_text, flags=re.DOTALL)
+    # Block-level tags separate words; inline tags (<a>, <em>...) don't.
+    text = re.sub(r"</?(p|li|ul|ol|h\d|blockquote|div|section|tr|td|th|pre|hr|br)\b[^>]*>",
+                  " ", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"\s+", " ", html.unescape(text)).strip()
+
+
+def search_entry(kind: str, title: str, url: str, detail: str, tags: list[str],
+                 content_html: str, date: dt.date | None) -> dict:
+    return {
+        "kind": kind,                    # "Essay" or "Book"
+        "title": title,
+        "url": url,
+        "detail": detail,                # description, or the book's author
+        "tags": tags,
+        "date": date.isoformat() if date else "",
+        "text": html_to_text(content_html)[:20000],  # cap very long notes
+    }
+
+
 def mailto(cfg: dict, subject: str) -> str:
     return f"mailto:{cfg['email']}?subject={quote(subject, safe='')}"
 
@@ -749,9 +795,11 @@ def build(cfg: dict, config_dir: Path) -> None:
         sys.exit(f"Refusing to use {out} as the output folder.")
 
     print(f"Building {cfg['title']} -> {out}")
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
+    # Empty the output folder rather than deleting it: on Windows a folder
+    # can't be deleted while a preview server has it open.
+    out.mkdir(parents=True, exist_ok=True)
+    for child in out.iterdir():
+        shutil.rmtree(child) if child.is_dir() else child.unlink()
 
     root = find_repo_root(vault)  # the vault may even be its own git repo
     essays = load_essays(cfg, vault, root)
@@ -760,14 +808,19 @@ def build(cfg: dict, config_dir: Path) -> None:
     md = make_markdown()
     site = Site(cfg, out)
 
+    search_index: list[dict] = []
+
     for essay in essays:
         render = lambda body: render_markdown(md, linker, body)  # noqa: E731
         cur = essay.current
+        content = render(essay.body)
+        search_index.append(search_entry("Essay", essay.title, essay.url, essay.description,
+                                         essay.tags, content, essay.date))
 
         # The live page: current content, labelled with the latest version number.
         site.write(f"{essay.slug}/index.html", "essay.html",
                    essay=essay, version=cur, is_current=True,
-                   title=essay.title, content=render(essay.body),
+                   title=essay.title, content=content,
                    mailto=mailto(cfg, cfg["email_subject"].format(
                        title=essay.title, version=cur.number)))
 
@@ -793,10 +846,15 @@ def build(cfg: dict, config_dir: Path) -> None:
     for book in books:
         if book.cover and covers[book.slug] is None:
             print(f"  warning: cover '{book.cover}' not found for {book.source.name}")
+        content = render_markdown(md, linker, book.body) if book.has_notes else ""
+        # Books without notes have no page; search links to their Library entry.
+        url = book.url if book.has_notes else f"{cfg['base_path']}/library/#{book.slug}"
+        search_index.append(search_entry("Book", book.title, url, book.author,
+                                         book.tags, content, book.finished))
         if book.has_notes:
             site.write(f"library/{book.slug}/index.html", "book.html",
                        book=book, cover=covers[book.slug],
-                       content=render_markdown(md, linker, book.body),
+                       content=content,
                        mailto=mailto(cfg, cfg["book_email_subject"].format(
                            title=book.title, author=book.author)))
     site.write("library/index.html", "library.html", books=books, covers=covers,
@@ -817,8 +875,20 @@ def build(cfg: dict, config_dir: Path) -> None:
                    essays=tagged["essays"], books=tagged["books"])
     site.write("tags/index.html", "tags.html", tags=tag_list)
 
-    site.write("index.html", "index.html", essays=essays,
+    # Homepage: the intro from Home.md (if it exists), then recent work.
+    home = vault / f"{cfg['home_note']}.md"
+    intro = ""
+    if home.exists():
+        _, home_body = split_frontmatter(home.read_text(encoding="utf-8"), home.name)
+        intro = render_markdown(md, linker, clean_body(home_body, ""))
+    site.write("index.html", "home.html", intro=intro, essays=essays[:5],
+               books=books[:6], covers=covers, tags=tag_list, more_essays=len(essays) > 5)
+
+    site.write("essays/index.html", "essays.html", essays=essays,
                years=group_by_year(essays, lambda e: e.date))
+    site.write("search/index.html", "search.html")
+    (out / "search.json").write_text(
+        json.dumps(search_index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     site.write("404.html", "404.html")
 
     shutil.copytree(HERE / "static", out, dirs_exist_ok=True)  # CSS, JS, fonts

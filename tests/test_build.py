@@ -6,6 +6,7 @@ output. It never touches this repository's own history.
     python tests/test_build.py
 """
 
+import json
 import os
 import re
 import subprocess
@@ -116,6 +117,11 @@ class Repo:
         self.git("commit", "-q", "-m", message)
 
 
+def prose(page: str) -> str:
+    """Just the rendered note body of a page."""
+    return page.split('class="column prose"', 1)[1].split("</div>", 1)[0]
+
+
 def read(site: Path, rel: str) -> str:
     return (site / rel).read_text(encoding="utf-8")
 
@@ -126,6 +132,7 @@ def main():
         repo.write("config.yaml", CONFIG)
         repo.write("vault/.obsidian/app.json", "{}")
         repo.write("vault/Draft Note.md", "---\npublish: false\n---\nPrivate draft.\n")
+        repo.write("vault/Home.md", "Hello, I write about [[On Trust|trust]].\n")
         repo.write("vault/Other Essay.md", OTHER)
         (repo.path / "vault/attachments").mkdir(parents=True)
         (repo.path / "vault/attachments/diagram.png").write_bytes(b"\x89PNG fake")
@@ -238,7 +245,7 @@ def main():
         check("image with escaped table pipe", 'width="200"' in other)
         check("[[#Heading]] keeps its text", "Jump to Some Heading." in other)
         check("unresolved link is escaped plain text",
-              "&lt;b&gt;bold&lt;/b&gt; 1. Intro" in other and "<ol" not in other)
+              "&lt;b&gt;bold&lt;/b&gt; 1. Intro" in other and "<ol" not in prose(other))
         check("no links rewritten inside code",
               other.count("[[On Trust]]") == 3)
 
@@ -271,13 +278,42 @@ def main():
         check("templates folder never built", not (site / "book").exists())
 
         # Theme toggle and fonts
-        check("theme toggle and script", 'class="theme-toggle"' in live and "theme.js" in live
+        check("theme toggle and script", 'class="theme-toggle icon-button"' in live and "theme.js" in live
               and (site / "theme.js").exists())
         check("fonts copied", (site / "fonts/newsreader-latin-opsz-normal.woff2").exists())
 
         # Index, tags, exclusions
-        index = read(site, "index.html")
-        check("index newest first", index.index("On Trust") < index.index("Other Essay"))
+        essays_page = read(site, "essays/index.html")
+        check("essays page newest first",
+              essays_page.index("On Trust") < essays_page.index("Other Essay"))
+
+        # Homepage
+        home = read(site, "index.html")
+        check("home intro from Home.md",
+              'Hello, I write about <a href="/test-repo/on-trust/">trust</a>' in home)
+        check("Home.md is not an essay", not (site / "home").exists())
+        check("home lists essays, books and topics",
+              "On Trust" in home and "b-the-idiot" in home and "/tags/novels/" in home)
+
+        # Search
+        docs = json.loads(read(site, "search.json"))
+        by_title = {d["title"]: d for d in docs}
+        check("search index has essays and books",
+              by_title["On Trust"]["kind"] == "Essay" and by_title["The Idiot"]["kind"] == "Book")
+        check("search index has plain text",
+              "built slowly and lost quickly" in by_title["On Trust"]["text"]
+              and "<" not in by_title["On Trust"]["text"])
+        check("search links books without notes to the library",
+              by_title["Short Book"]["url"] == "/test-repo/library/#short-book")
+        check("search index excludes unpublished",
+              "Draft Note" not in by_title and "Secret Book" not in by_title)
+        check("search page and window", (site / "search/index.html").exists()
+              and 'class="search-dialog"' in live and (site / "search.js").exists())
+
+        # Translate menu: Google Translate links for the current page
+        check("translate links", "translate.google.com/translate?sl=en&amp;tl=it&amp;u="
+              "https%3A//tester.github.io/test-repo/on-trust/" in live
+              and (site / "translate.js").exists())
         check("tag pages", (site / "tags/ethics/index.html").exists()
               and (site / "tags/society/index.html").exists())
         check("unpublished note not built", not (site / "draft-note").exists())

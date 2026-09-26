@@ -2,22 +2,24 @@
 {% set section = "essays" %}
 {% block title %}History of {{ essay.title }} · {{ site.title }}{% endblock %}
 {% block main %}
-<header class="page-header">
-  <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a></p>
-  <h1>History</h1>
-  <p class="meta">{{ essay.versions|length }} versions. Each one is a snapshot you can read or compare with the one before.</p>
-</header>
-<ol class="versions" reversed>
-{% for v in essay.versions|reverse %}
-  <li>
-    <p class="version-head">
-      <a href="{{ essay.url }}v/{{ v.number }}/"><strong>v{{ v.number }}</strong></a>
-      <time datetime="{{ v.date.isoformat() }}">{{ v.date|date }}</time>
-      {% if loop.first %}<span class="badge">current</span>{% endif %}
-    </p>
+<div class="sheet">
+  <header class="column page-header">
+    <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a></p>
+    <h1>History</h1>
+    <p class="dek">This essay has changed {{ essay.versions|length - 1 }} time{{ "" if essay.versions|length == 2 else "s" }} since it was first published. Every version is kept.</p>
+  </header>
+  {% for v in essay.versions|reverse %}
+  <h2 class="margin version-label">
+    <a href="{{ essay.url }}v/{{ v.number }}/">Version {{ v.number }}</a>
+    <time datetime="{{ v.date.isoformat() }}">{{ v.date|date }}</time>
+  </h2>
+  <div class="column version">
     <p class="version-note">{{ v.note }}</p>
-    {% if v.number > 1 %}<p class="version-links"><a href="{{ essay.url }}diff/{{ v.number }}/">Changes from v{{ v.number - 1 }}</a></p>{% endif %}
-  </li>
-{% endfor %}
-</ol>
+    <p class="version-links">
+      {% if loop.first %}<a href="{{ essay.url }}">Read the current version</a>{% else %}<a href="{{ essay.url }}v/{{ v.number }}/">Read this version</a>{% endif %}
+      {% if v.number > 1 %}<a href="{{ essay.url }}diff/{{ v.number }}/">See what changed</a>{% endif %}
+    </p>
+  </div>
+  {% endfor %}
+</div>
 {% endblock %}

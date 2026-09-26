@@ -1,0 +1,29 @@
+{#
+  Small pieces shared by several pages. Import with:
+    {% import "_macros.html" as m with context %}
+
+  view-transition-name ties an item on one page to the same item on the
+  next page, so the browser can glide it into place when you navigate
+  (e.g. an essay title in a list grows into the page heading).
+#}
+
+{% macro essay_item(essay) %}
+<li class="entry">
+  <a class="entry-title" href="{{ essay.url }}" style="view-transition-name: e-{{ essay.slug }}">{{ essay.title }}</a>
+  {% if essay.description %}<p class="entry-desc">{{ essay.description }}</p>{% endif %}
+  <p class="entry-date"><time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time></p>
+</li>
+{% endmacro %}
+
+{% macro cover(book, url, size="small") %}
+{% if url %}
+<img class="cover cover-{{ size }}" src="{{ url }}" alt="{{ book.title }}" loading="lazy" style="view-transition-name: b-{{ book.slug }}">
+{% else %}
+{# No cover image: a plain cloth binding with the title printed on it. #}
+<span class="cover cover-{{ size }} cover-blank tone-{{ book.tone }}" style="view-transition-name: b-{{ book.slug }}"><span>{{ book.title }}</span></span>
+{% endif %}
+{% endmacro %}
+
+{% macro stars(book) %}
+{% if book.rating %}<span class="stars" role="img" aria-label="Rated {{ book.rating }} out of 5">{{ book.stars }}</span>{% endif %}
+{% endmacro %}

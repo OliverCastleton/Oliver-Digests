@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% set section = "essays" %}
+{% block title %}Essays · {{ site.title }}{% endblock %}
+{% block main %}
+<div class="sheet">
+  <header class="column page-header">
+    <h1>Essays</h1>
+  </header>
+  {% for year, group in years %}
+  <h2 class="margin year">{{ year }}</h2>
+  <div class="column">
+    <ol class="entry-list">
+      {% for essay in group %}{{ m.essay_item(essay) }}{% endfor %}
+    </ol>
+  </div>
+  {% else %}
+  <p class="column muted">No essays yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

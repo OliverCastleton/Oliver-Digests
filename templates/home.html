@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% set section = "home" %}
+{% block main %}
+<h1 class="visually-hidden">{{ site.title }}</h1>
+<div class="sheet">
+  <div class="column intro">
+    {% if intro %}{{ intro|safe }}{% else %}<p>{{ site.description }}</p>{% endif %}
+  </div>
+
+  {% if essays %}
+  <h2 class="margin margin-label">Latest essays</h2>
+  <div class="column">
+    <ol class="entry-list">
+      {% for essay in essays %}{{ m.essay_item(essay) }}{% endfor %}
+    </ol>
+    {% if more_essays %}<p class="more"><a href="{{ base }}/essays/">All essays</a></p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if books %}
+  <h2 class="margin margin-label">Recently read</h2>
+  <div class="column">
+    <ul class="shelf">
+      {% for book in books %}
+      <li>
+        <a href="{{ book.url if book.has_notes else base ~ '/library/#' ~ book.slug }}" title="{{ book.title }}{% if book.author %}, {{ book.author }}{% endif %}">
+          {{ m.cover(book, covers[book.slug], "shelf") }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="more"><a href="{{ base }}/library/">The whole library</a></p>
+  </div>
+  {% endif %}
+
+  {% if tags %}
+  <h2 class="margin margin-label">Topics</h2>
+  <div class="column">
+    <ul class="topics">
+      {% for tag, tagged in tags %}
+      <li><a href="{{ base }}/tags/{{ tag|tag_slug }}/">{{ tag }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if not essays and not books %}
+  <p class="column muted">Nothing published yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
