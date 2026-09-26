@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="visually-hidden">{{ site.title }}</h1>
+{% if site.description %}<p class="intro">{{ site.description }}</p>{% endif %}
+{% if essays %}
+<ol class="essay-list">
+{% for essay in essays %}
+  <li>
+    <a class="essay-link" href="{{ essay.url }}">{{ essay.title }}</a>
+    <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
+    {% if essay.description %}<p>{{ essay.description }}</p>{% endif %}
+  </li>
+{% endfor %}
+</ol>
+{% else %}
+<p class="muted">Nothing published yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}History of {{ essay.title }} · {{ site.title }}{% endblock %}
+{% block main %}
+<header class="essay-header">
+  <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a></p>
+  <h1>History</h1>
+  <p class="meta">{{ essay.versions|length }} versions. Each one is a snapshot you can read or compare with the one before.</p>
+</header>
+<ol class="versions" reversed>
+{% for v in essay.versions|reverse %}
+  <li>
+    <p class="version-head">
+      <a href="{{ essay.url }}v/{{ v.number }}/"><strong>v{{ v.number }}</strong></a>
+      <time datetime="{{ v.date.isoformat() }}">{{ v.date|date }}</time>
+      {% if loop.first %}<span class="badge">current</span>{% endif %}
+    </p>
+    <p class="version-note">{{ v.note }}</p>
+    {% if v.number > 1 %}<p class="version-links"><a href="{{ essay.url }}diff/{{ v.number }}/">Changes from v{{ v.number - 1 }}</a></p>{% endif %}
+  </li>
+{% endfor %}
+</ol>
+{% endblock %}

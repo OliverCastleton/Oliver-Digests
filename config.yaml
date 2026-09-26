@@ -1,0 +1,18 @@
+# Site settings: the one place to change the site's name, owner, and address.
+
+title: Oliver Digests
+author: Oliver                    # shown in the footer and page metadata
+email: you@example.com            # TODO: your real address; receives "Email me about this"
+description: Essays by Oliver.    # shown on the home page and in search results
+
+# Full address of the site, with no trailing slash. It sets the base path of every link.
+#   GitHub Pages project site:  https://<username>.github.io/<repo>
+#   Custom domain:              https://example.com
+base_url: https://oliver-broadterms.github.io/Oliver-Digests
+
+# Subject line of "Email me about this". {title} and {version} are filled in.
+email_subject: "Re: {title} (v{version})"
+
+language: en
+vault: vault      # the Obsidian vault folder, relative to this file
+output: _site     # the build output folder (deleted and rebuilt on each build)

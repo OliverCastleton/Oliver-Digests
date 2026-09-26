@@ -1,0 +1,18 @@
+# Build output
+_site/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Obsidian: per-device workspace and cache (settings in .obsidian/*.json are kept)
+vault/.obsidian/workspace*.json
+vault/.obsidian/cache
+vault/.trash/
+.trash/
+
+# OS / tools
+.DS_Store
+Thumbs.db
+.omc/

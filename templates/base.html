@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="{{ site.language }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{% block title %}{{ site.title }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ site.description }}{% endblock %}">
+<meta name="author" content="{{ site.author }}">
+<link rel="canonical" href="{{ canonical }}">
+{% block head %}{% endblock %}
+<link rel="stylesheet" href="{{ base }}/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="site-title" href="{{ base }}/">{{ site.title }}</a>
+  <nav aria-label="Site"><a href="{{ base }}/tags/">Tags</a></nav>
+</header>
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <p>&copy; {{ year }} {{ site.author }} · <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

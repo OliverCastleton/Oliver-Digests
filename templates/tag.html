@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}#{{ tag }} · {{ site.title }}{% endblock %}
+{% block main %}
+<header class="essay-header">
+  <p class="kicker"><a href="{{ base }}/tags/">Tags</a></p>
+  <h1>#{{ tag }}</h1>
+</header>
+<ol class="essay-list">
+{% for essay in essays %}
+  <li>
+    <a class="essay-link" href="{{ essay.url }}">{{ essay.title }}</a>
+    <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
+    {% if essay.description %}<p>{{ essay.description }}</p>{% endif %}
+  </li>
+{% endfor %}
+</ol>
+{% endblock %}
