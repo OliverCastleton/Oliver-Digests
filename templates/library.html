@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set section = "library" %}
+{% block title %}Library · {{ site.title }}{% endblock %}
+{% block description %}Books {{ site.author }} has read, with notes.{% endblock %}
+{% block main %}
+<header class="page-header">
+  <h1>Library</h1>
+  <p class="dek">Books I’ve read{% if books %}, {{ books|length }} so far{% endif %}. Titles with a link have notes.</p>
+</header>
+{% for year, group in years %}
+<section class="year-group" aria-labelledby="y{{ year or 'earlier' }}">
+  <h2 class="year" id="y{{ year or 'earlier' }}">{{ year or "Earlier" }}</h2>
+  <ol class="book-list">
+  {% for book in group %}
+    <li class="book">
+      {% if covers[book.slug] %}
+      <img class="cover" src="{{ covers[book.slug] }}" alt="" width="56" height="84" loading="lazy">
+      {% else %}
+      <span class="cover cover-blank" aria-hidden="true">{{ book.title[:1] }}</span>
+      {% endif %}
+      <div class="book-info">
+        {% if book.has_notes %}
+        <a class="entry-title" href="{{ book.url }}">{{ book.title }}</a>
+        {% else %}
+        <span class="entry-title">{{ book.title }}</span>
+        {% endif %}
+        {% if book.author %}<p class="book-author">{{ book.author }}</p>{% endif %}
+        {% if book.rating or book.finished %}
+        <p class="entry-meta">
+          {% if book.rating %}<span class="stars" role="img" aria-label="Rated {{ book.rating }} out of 5">{{ book.stars }}</span>{% endif %}
+          {% if book.rating and book.finished %} · {% endif %}
+          {% if book.finished %}<time datetime="{{ book.finished.isoformat() }}">{{ book.finished|date }}</time>{% endif %}
+        </p>
+        {% endif %}
+        {% if book.description %}<p class="entry-desc">{{ book.description }}</p>{% endif %}
+      </div>
+    </li>
+  {% endfor %}
+  </ol>
+</section>
+{% else %}
+<p class="muted">No books yet.</p>
+{% endfor %}
+{% endblock %}

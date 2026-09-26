@@ -1,18 +1,22 @@
 {% extends "base.html" %}
+{% set section = "essays" %}
 {% block main %}
 <h1 class="visually-hidden">{{ site.title }}</h1>
 {% if site.description %}<p class="intro">{{ site.description }}</p>{% endif %}
-{% if essays %}
-<ol class="essay-list">
-{% for essay in essays %}
-  <li>
-    <a class="essay-link" href="{{ essay.url }}">{{ essay.title }}</a>
-    <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
-    {% if essay.description %}<p>{{ essay.description }}</p>{% endif %}
-  </li>
-{% endfor %}
-</ol>
+{% for year, group in years %}
+<section class="year-group" aria-labelledby="y{{ year }}">
+  <h2 class="year" id="y{{ year }}">{{ year }}</h2>
+  <ol class="entry-list">
+  {% for essay in group %}
+    <li class="entry">
+      <a class="entry-title" href="{{ essay.url }}">{{ essay.title }}</a>
+      {% if essay.description %}<p class="entry-desc">{{ essay.description }}</p>{% endif %}
+      <p class="entry-meta"><time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time> · {{ essay.minutes }} min read</p>
+    </li>
+  {% endfor %}
+  </ol>
+</section>
 {% else %}
 <p class="muted">Nothing published yet.</p>
-{% endif %}
+{% endfor %}
 {% endblock %}

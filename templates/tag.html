@@ -1,17 +1,36 @@
 {% extends "base.html" %}
+{% set section = "tags" %}
 {% block title %}#{{ tag }} · {{ site.title }}{% endblock %}
 {% block main %}
-<header class="essay-header">
+<header class="page-header">
   <p class="kicker"><a href="{{ base }}/tags/">Tags</a></p>
   <h1>#{{ tag }}</h1>
 </header>
-<ol class="essay-list">
-{% for essay in essays %}
-  <li>
-    <a class="essay-link" href="{{ essay.url }}">{{ essay.title }}</a>
-    <time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time>
-    {% if essay.description %}<p>{{ essay.description }}</p>{% endif %}
-  </li>
-{% endfor %}
-</ol>
+{% if essays %}
+<section class="year-group">
+  {% if books %}<h2 class="year">Essays</h2>{% endif %}
+  <ol class="entry-list">
+  {% for essay in essays %}
+    <li class="entry">
+      <a class="entry-title" href="{{ essay.url }}">{{ essay.title }}</a>
+      {% if essay.description %}<p class="entry-desc">{{ essay.description }}</p>{% endif %}
+      <p class="entry-meta"><time datetime="{{ essay.date.isoformat() }}">{{ essay.date|date }}</time></p>
+    </li>
+  {% endfor %}
+  </ol>
+</section>
+{% endif %}
+{% if books %}
+<section class="year-group">
+  <h2 class="year">Books</h2>
+  <ol class="entry-list">
+  {% for book in books %}
+    <li class="entry">
+      {% if book.has_notes %}<a class="entry-title" href="{{ book.url }}">{{ book.title }}</a>{% else %}<span class="entry-title">{{ book.title }}</span>{% endif %}
+      {% if book.author %}<p class="book-author">{{ book.author }}</p>{% endif %}
+    </li>
+  {% endfor %}
+  </ol>
+</section>
+{% endif %}
 {% endblock %}

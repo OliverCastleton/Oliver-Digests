@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{% set section = "essays" %}
 {% block title %}{{ essay.title }}: changes in v{{ version.number }} · {{ site.title }}{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
 {% block main %}
-<header class="essay-header">
+<header class="page-header">
   <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a> · <a href="{{ essay.url }}history/">History</a></p>
   <h1>Changes in v{{ version.number }}</h1>
   <p class="meta">

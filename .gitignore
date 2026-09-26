@@ -7,9 +7,9 @@ __pycache__/
 *.pyc
 
 # Obsidian: per-device workspace and cache (settings in .obsidian/*.json are kept)
-vault/.obsidian/workspace*.json
-vault/.obsidian/cache
-vault/.trash/
+**/.obsidian/workspace*.json
+**/.obsidian/cache
+**/.trash/
 .trash/
 
 # OS / tools

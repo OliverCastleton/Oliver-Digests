@@ -1,43 +1,136 @@
-/* One narrow column of serif text. System fonts only, so no font downloads.
-   Light/dark follows the reader's OS setting via prefers-color-scheme. */
+/* Oliver Digests: one narrow column of text.
+   Fonts are self-hosted (static/fonts, SIL Open Font License), so the site
+   makes no requests to other servers. Newsreader is the reading face;
+   Inter is used for small interface text. */
+
+/* ---------- Fonts ---------- */
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("fonts/newsreader-latin-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("fonts/newsreader-latin-ext-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("fonts/newsreader-latin-opsz-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("fonts/newsreader-latin-ext-opsz-italic.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------- Colours ----------
+   Light is the default. Dark applies when the OS prefers it (unless the
+   reader picked light with the toggle), or when the reader picked dark.
+   The two dark blocks must stay identical. */
 
 :root {
-  --bg: #fdfcf9;
-  --text: #1c1b19;
-  --muted: #6b6760;
-  --rule: #e4e1da;
-  --link: #1c1b19;
-  --link-underline: #b9b4aa;
-  --notice-bg: #f3f1ec;
-  /* Diff colors: WCAG AA contrast on their own backgrounds in both modes. */
+  color-scheme: light;
+  --bg: #fbf9f4;
+  --surface: #f2eee5;
+  --text: #1f1d1a;
+  --muted: #6b655c;
+  --rule: #e4dfd3;
+  --accent: #a3372b;
+  --link-line: #d8b2aa;
   --del-bg: #fbe0de;
   --del-text: #8c1d18;
   --ins-bg: #dcf2de;
   --ins-text: #185c2a;
-  --mark-bg: #fbeeb8;
-
-  --measure: 650px;
-  --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, "Iowan Old Style",
-           "Palatino Linotype", Palatino, Georgia, serif;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --mark-bg: #f8e9a8;
+  --selection: #f1d3c9;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #171716;
-    --text: #e6e3dc;
-    --muted: #a19d95;
-    --rule: #36342f;
-    --link: #e6e3dc;
-    --link-underline: #6d6961;
-    --notice-bg: #22211f;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #151412;
+    --surface: #1f1d1a;
+    --text: #e8e4da;
+    --muted: #a29c90;
+    --rule: #33302b;
+    --accent: #eb9a86;
+    --link-line: #6d4a42;
     --del-bg: #4b1f1c;
     --del-text: #ffc9c3;
     --ins-bg: #1b3f25;
     --ins-text: #c2efcb;
     --mark-bg: #5a4a12;
+    --selection: #5b3229;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #151412;
+  --surface: #1f1d1a;
+  --text: #e8e4da;
+  --muted: #a29c90;
+  --rule: #33302b;
+  --accent: #eb9a86;
+  --link-line: #6d4a42;
+  --del-bg: #4b1f1c;
+  --del-text: #ffc9c3;
+  --ins-bg: #1b3f25;
+  --ins-text: #c2efcb;
+  --mark-bg: #5a4a12;
+  --selection: #5b3229;
+}
+
+/* ---------- Base ---------- */
+
+:root {
+  --measure: 660px;
+  --serif: "Newsreader", Charter, "Iowan Old Style", "Sitka Text", Cambria, Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -49,26 +142,32 @@ html {
 
 body {
   margin: 0 auto;
-  max-width: calc(var(--measure) + 2 * 1.5rem);
+  max-width: calc(var(--measure) + 3rem);
   padding: 0 1.5rem;
   background: var(--bg);
   color: var(--text);
   font-family: var(--serif);
-  font-size: 1.1875rem;          /* 19px */
-  line-height: 1.65;
+  font-size: 1.25rem;               /* 20px */
+  line-height: 1.6;
+  font-optical-sizing: auto;
   font-kerning: normal;
-  hanging-punctuation: first;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+::selection { background: var(--selection); }
+
 a {
-  color: var(--link);
+  color: inherit;
   text-decoration-line: underline;
-  text-decoration-color: var(--link-underline);
+  text-decoration-color: var(--link-line);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 0.2em;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
-a:hover { text-decoration-color: currentColor; }
-a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+a:hover { color: var(--accent); text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 
 .muted { color: var(--muted); }
 
@@ -77,137 +176,298 @@ a:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   clip: rect(0 0 0 0); white-space: nowrap;
 }
 .skip-link { position: absolute; left: -999px; }
-.skip-link:focus { left: 1rem; top: 1rem; background: var(--bg); padding: 0.25rem 0.5rem; }
+.skip-link:focus { left: 1rem; top: 1rem; background: var(--bg); padding: 0.25rem 0.5rem; z-index: 1; }
 
-/* Header and footer: small, sans-serif, out of the way. */
-.site-header, .site-footer {
-  font-family: var(--sans);
-  font-size: 0.875rem;
-  color: var(--muted);
-}
+/* ---------- Header and footer ---------- */
+
 .site-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding: 2.5rem 0 3.5rem;
+  align-items: center;
+  gap: 1rem;
+  padding: 2.25rem 0 4rem;
 }
-.site-header a { color: var(--muted); text-decoration: none; }
-.site-header a:hover { color: var(--text); }
-.site-title { font-weight: 600; color: var(--text) !important; letter-spacing: 0.01em; }
+.site-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.site-title:hover { color: var(--text); }
+.site-header nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+}
+.site-header nav a { color: var(--muted); text-decoration: none; }
+.site-header nav a:hover { color: var(--text); }
+.site-header nav a[aria-current="page"] {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.45em;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: -0.5rem -0.4rem -0.5rem 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.theme-toggle[hidden] { display: none; }
+.theme-toggle:hover { color: var(--text); background: var(--surface); }
+/* Show the moon in light mode (click for dark) and the sun in dark mode. */
+.icon-sun { display: none; }
+:root[data-theme="dark"] .icon-sun { display: block; }
+:root[data-theme="dark"] .icon-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .icon-sun { display: block; }
+  :root:not([data-theme="light"]) .icon-moon { display: none; }
+}
+
 .site-footer {
-  margin-top: 5rem;
+  margin-top: 6rem;
   padding: 1.5rem 0 3rem;
   border-top: 1px solid var(--rule);
-}
-.site-footer a { color: var(--muted); }
-
-/* Headings */
-h1, h2, h3, h4 { line-height: 1.25; font-weight: 600; }
-h1 { font-size: 2rem; margin: 0 0 0.5rem; letter-spacing: -0.01em; }
-.prose h2 { font-size: 1.4rem; margin: 2.5rem 0 0.75rem; }
-.prose h3 { font-size: 1.15rem; margin: 2rem 0 0.5rem; }
-
-.essay-header { margin-bottom: 2.5rem; }
-.meta, .kicker, time, .version-links, .diff-legend {
   font-family: var(--sans);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--muted);
 }
-.meta a, .kicker a { color: var(--muted); }
-.kicker { margin: 0 0 0.5rem; }
+.site-footer p { margin: 0; }
+.site-footer a { color: var(--muted); }
 
-/* Essay body */
-.prose p, .prose ul, .prose ol, .prose blockquote, .prose pre, .prose table { margin: 0 0 1.25em; }
-.prose img { max-width: 100%; height: auto; display: block; margin: 2rem auto; }
+/* ---------- Page headings ---------- */
+
+h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; text-wrap: balance; }
+h1 {
+  font-size: clamp(2.1rem, 1.4rem + 3vw, 2.9rem);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.page-header { margin-bottom: 3rem; }
+.page-header h1 + .dek, .page-header h1 + .meta { margin-top: 0.9rem; }
+.dek {
+  font-size: 1.3rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--muted);
+  margin: 0;
+  text-wrap: pretty;
+}
+.meta, .kicker, .entry-meta, .version-links, .diff-legend, .notice {
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.meta { margin: 1rem 0 0; }
+.meta a, .kicker a { color: var(--muted); }
+.meta a:hover, .kicker a:hover { color: var(--accent); }
+.kicker { margin: 0 0 0.75rem; letter-spacing: 0.02em; }
+
+/* ---------- Essay body ---------- */
+
+.prose { text-wrap: pretty; hanging-punctuation: first; }
+.prose p, .prose ul, .prose ol, .prose blockquote, .prose pre, .prose table, .prose figure {
+  margin: 0 0 1.35em;
+}
+.prose h2 { font-size: 1.6rem; margin: 2.75rem 0 0.9rem; letter-spacing: -0.01em; }
+.prose h3 { font-size: 1.3rem; margin: 2.25rem 0 0.6rem; }
+.prose h4 { font-size: 1.1rem; margin: 2rem 0 0.5rem; }
+.prose a:hover { color: var(--accent); }
+.prose img { max-width: 100%; height: auto; display: block; margin: 2.25rem auto; border-radius: 3px; }
+.prose ul, .prose ol { padding-left: 1.4em; }
+.prose li { margin-bottom: 0.4em; }
+.prose li::marker { color: var(--muted); }
 .prose blockquote {
   margin-left: 0;
   padding-left: 1.25em;
-  border-left: 2px solid var(--rule);
-  color: var(--muted);
+  border-left: 2px solid var(--accent);
   font-style: italic;
 }
-.prose hr { border: 0; text-align: center; margin: 2.5rem 0; }
-.prose hr::after { content: "* * *"; color: var(--muted); letter-spacing: 0.5em; }
-.prose code, .prose pre { font-family: var(--mono); font-size: 0.85em; }
+.prose blockquote p:last-child { margin-bottom: 0; }
+.prose hr { border: 0; text-align: center; margin: 3rem 0; }
+.prose hr::after { content: "⁂"; color: var(--muted); font-size: 1.25rem; }
+.prose code, .prose pre { font-family: var(--mono); font-size: 0.82em; }
+.prose :not(pre) > code { background: var(--surface); padding: 0.1em 0.3em; border-radius: 3px; }
 .prose pre {
   overflow-x: auto;
-  padding: 1rem;
-  background: var(--notice-bg);
-  border-radius: 4px;
-  line-height: 1.5;
+  padding: 1rem 1.15rem;
+  background: var(--surface);
+  border-radius: 6px;
+  line-height: 1.55;
 }
-.prose table { border-collapse: collapse; width: 100%; font-size: 0.95em; }
-.prose th, .prose td { border-bottom: 1px solid var(--rule); padding: 0.4em 0.6em; text-align: left; }
-.prose li { margin-bottom: 0.35em; }
-mark { background: var(--mark-bg); color: inherit; padding: 0 0.1em; }
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.prose th, .prose td { border-bottom: 1px solid var(--rule); padding: 0.5em 0.6em; text-align: left; }
+.prose th { font-weight: 600; }
+mark { background: var(--mark-bg); color: inherit; padding: 0 0.12em; border-radius: 2px; }
+sup { line-height: 0; }  /* keep footnote markers from widening the line gap */
 
 /* Footnotes (markdown-it-footnote output) */
-sup { line-height: 0; }  /* keep footnote markers from widening the line gap */
-.footnote-ref a { text-decoration: none; padding: 0 0.1em; }
-hr.footnotes-sep { border: 0; border-top: 1px solid var(--rule); margin: 3rem 0 1.5rem; width: 30%; }
+.footnote-ref a {
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 0 0.1em;
+}
+hr.footnotes-sep { border: 0; border-top: 1px solid var(--rule); margin: 3.5rem 0 1.5rem; width: 4rem; }
 hr.footnotes-sep::after { content: none; }
-.footnotes { font-size: 0.9rem; color: var(--muted); }
+.footnotes { font-size: 1rem; line-height: 1.55; color: var(--muted); }
 .footnotes-list { padding-left: 1.25em; }
-.footnotes-list p { margin: 0 0 0.5em; }
+.footnotes-list p { margin: 0 0 0.6em; }
 .footnote-backref { text-decoration: none; }
 
-.essay-footer {
-  margin-top: 3.5rem;
+.page-footer {
+  margin-top: 4rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--rule);
   font-family: var(--sans);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
 }
-.tags a { color: var(--muted); margin-right: 0.5em; }
+.page-footer p { margin: 0 0 0.75rem; }
+.tags a { color: var(--muted); margin-right: 0.6em; text-decoration: none; }
+.tags a:hover { color: var(--accent); }
+.email-link { font-weight: 500; }
 
 .notice {
-  font-family: var(--sans);
-  font-size: 0.9375rem;
-  background: var(--notice-bg);
-  padding: 0.85rem 1rem;
-  border-radius: 4px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.9rem 1.1rem;
+  border-radius: 6px;
   margin: 0 0 2.5rem;
 }
 
-/* Index and tag lists */
-.intro { margin: 0 0 3rem; }
-.essay-list { list-style: none; padding: 0; margin: 0; }
-.essay-list li { margin: 0 0 2rem; }
-.essay-link { font-size: 1.25rem; font-weight: 600; text-decoration: none; }
-.essay-link:hover { text-decoration: underline; }
-.essay-list time { display: block; margin-top: 0.15rem; }
-.essay-list p { margin: 0.35rem 0 0; }
-.tag-list { list-style: none; padding: 0; }
-.tag-list li { margin-bottom: 0.5rem; }
+/* ---------- Lists: home, tags, library ---------- */
 
-/* History */
+.intro { font-size: 1.35rem; line-height: 1.5; margin: 0 0 3.5rem; text-wrap: pretty; }
+
+.year-group { margin: 0 0 3rem; }
+.year {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.year::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
+
+.entry-list, .book-list, .tag-cloud { list-style: none; padding: 0; margin: 0; }
+.entry { margin: 0 0 2rem; }
+.entry-title {
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+a.entry-title:hover { color: var(--accent); }
+.entry-desc { margin: 0.35rem 0 0; color: var(--muted); line-height: 1.5; text-wrap: pretty; }
+.entry-meta { margin: 0.4rem 0 0; }
+
+/* Library */
+.book {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  margin: 0 0 1.75rem;
+}
+.book .entry-title { font-size: 1.3rem; }
+/* In the library only some titles are links (books with notes), so mark them. */
+.book a.entry-title { text-decoration: underline; text-decoration-color: var(--link-line); }
+.book-author { margin: 0.15rem 0 0; font-style: italic; color: var(--muted); }
+.book-info .entry-desc { margin-top: 0.4rem; font-size: 1.05rem; }
+.cover {
+  display: block;
+  width: 56px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 3px 10px rgb(0 0 0 / 0.08);
+}
+.cover-blank {
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-size: 1.6rem;
+  font-style: italic;
+  box-shadow: none;
+}
+.stars { color: var(--accent); letter-spacing: 0.08em; }
+.book-header { display: flex; gap: 2rem; align-items: flex-end; }
+.cover-large { width: 120px; height: auto; flex: none; }
+
+/* Tags overview */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; }
+.tag-cloud a { text-decoration: none; }
+.tag-cloud .muted { font-family: var(--sans); font-size: 0.75rem; }
+
+/* ---------- History and diffs ---------- */
+
 .versions { list-style: none; padding: 0; margin: 0; }
 .versions li { padding: 1.25rem 0; border-top: 1px solid var(--rule); }
-.version-head { margin: 0; display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap; }
+.version-head {
+  margin: 0;
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+}
+.version-head time { color: var(--muted); }
 .version-note { margin: 0.35rem 0 0; white-space: pre-line; }
 .version-links { margin: 0.35rem 0 0; }
 .badge {
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 0 0.4em;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  padding: 0 0.55em;
 }
 
-/* Diffs. Deletions are also struck through and insertions underlined, so
-   the change is visible without relying on color alone. */
 .change-note {
-  background: var(--notice-bg);
+  background: var(--surface);
   padding: 1rem 1.25rem;
-  border-radius: 4px;
+  border-radius: 6px;
   margin: 0 0 1.5rem;
 }
-.change-note p { margin: 0; white-space: pre-line; }
+.change-note p { margin: 0; white-space: pre-line; font-style: italic; }
 .diff p { margin: 0 0 1.25em; white-space: pre-wrap; overflow-wrap: anywhere; }
 .diff p.diff-same { color: var(--muted); }
+/* Deletions are also struck through and insertions underlined, so changes
+   are visible without relying on colour alone. */
 del, ins { border-radius: 2px; padding: 0 0.05em; }
 del {
   background: var(--del-bg);
@@ -225,13 +485,23 @@ ins {
 .diff p.diff-added ins, .diff p.diff-removed del { display: block; padding: 0.25em 0.5em; }
 .diff-legend { margin: 0 0 2rem; }
 
-@media (max-width: 480px) {
-  body { font-size: 1.0625rem; padding: 0 1.1rem; }
-  h1 { font-size: 1.65rem; }
-  .site-header { padding: 1.5rem 0 2.5rem; }
+/* ---------- Small screens and print ---------- */
+
+@media (max-width: 520px) {
+  body { font-size: 1.125rem; padding: 0 1.15rem; }
+  .site-header { padding: 1.5rem 0 2.75rem; }
+  .site-header nav { gap: 0.9rem; }
+  .intro, .dek { font-size: 1.2rem; }
+  .entry-title { font-size: 1.3rem; }
+  .book-header { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+  .cover-large { width: 96px; }
 }
 
 @media print {
-  .site-header nav, .essay-footer, .skip-link { display: none; }
-  body { max-width: none; }
+  .site-header nav, .page-footer, .skip-link { display: none; }
+  body { max-width: none; background: #fff; color: #000; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
 }

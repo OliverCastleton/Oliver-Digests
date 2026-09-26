@@ -1,0 +1,22 @@
+filters:
+  and:
+    - file.inFolder("books")
+views:
+  - type: table
+    name: Library
+    order:
+      - file.name
+      - author
+      - finished
+      - rating
+      - publish
+    sort:
+      - property: finished
+        direction: DESC
+  - type: cards
+    name: Covers
+    image: note.cover
+    order:
+      - file.name
+      - author
+      - rating

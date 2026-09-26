@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% set section = "tags" %}
 {% block title %}Tags · {{ site.title }}{% endblock %}
 {% block main %}
-<header class="essay-header"><h1>Tags</h1></header>
+<header class="page-header"><h1>Tags</h1></header>
 {% if tags %}
-<ul class="tag-list">
-{% for tag, essays in tags %}
-  <li><a href="{{ base }}/tags/{{ tag|tag_slug }}/">#{{ tag }}</a> <span class="muted">({{ essays|length }})</span></li>
+<ul class="tag-cloud">
+{% for tag, tagged in tags %}
+  <li><a href="{{ base }}/tags/{{ tag|tag_slug }}/">#{{ tag }}</a> <span class="muted">{{ tagged.essays|length + tagged.books|length }}</span></li>
 {% endfor %}
 </ul>
 {% else %}

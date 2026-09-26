@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% set section = "essays" %}
 {% block title %}History of {{ essay.title }} · {{ site.title }}{% endblock %}
 {% block main %}
-<header class="essay-header">
+<header class="page-header">
   <p class="kicker"><a href="{{ essay.url }}">{{ essay.title }}</a></p>
   <h1>History</h1>
   <p class="meta">{{ essay.versions|length }} versions. Each one is a snapshot you can read or compare with the one before.</p>

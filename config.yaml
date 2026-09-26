@@ -8,11 +8,19 @@ description: Essays by Oliver.    # shown on the home page and in search results
 # Full address of the site, with no trailing slash. It sets the base path of every link.
 #   GitHub Pages project site:  https://<username>.github.io/<repo>
 #   Custom domain:              https://example.com
-base_url: https://oliver-broadterms.github.io/Oliver-Digests
+base_url: https://olivercastleton.github.io/Oliver-Digests
 
 # Subject line of "Email me about this". {title} and {version} are filled in.
 email_subject: "Re: {title} (v{version})"
 
+# The Library: every published note in this vault folder is a book.
+books_folder: books
+# Subject line of "Email me about this book". {title} and {author} are filled in.
+book_email_subject: "Re: your notes on {title}"
+
+# Vault folders that are never published (note templates live here).
+exclude_folders: [templates]
+
 language: en
-vault: vault      # the Obsidian vault folder, relative to this file
+vault: Oliver Digests Vault   # the Obsidian vault folder, relative to this file
 output: _site     # the build output folder (deleted and rebuilt on each build)

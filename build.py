@@ -13,9 +13,10 @@ What happens, in order
     3. For each one, read its git history and work out its versions:
          - the first commit in which the note is published is v1;
          - after that, only commits whose message starts with `rev:` add a version.
-    4. Render Markdown to HTML (wikilinks, image embeds, footnotes).
-    5. Compute word-level diffs between consecutive versions.
-    6. Write every page into the output folder using the Jinja templates.
+    4. Collect book notes (the books folder) for the Library.
+    5. Render Markdown to HTML (wikilinks, image embeds, footnotes).
+    6. Compute word-level diffs between consecutive versions.
+    7. Write every page into the output folder using the Jinja templates.
 
 Everything is computed here, at build time. The site needs no server code.
 """
@@ -73,6 +74,9 @@ def load_config(path: Path, local: bool) -> dict:
     cfg.setdefault("vault", "vault")
     cfg.setdefault("output", "_site")
     cfg.setdefault("email_subject", "Re: {title} (v{version})")
+    cfg.setdefault("books_folder", "books")
+    cfg.setdefault("exclude_folders", ["templates"])
+    cfg.setdefault("book_email_subject", "Re: your notes on {title}")
 
     cfg["base_url"] = str(cfg["base_url"]).rstrip("/")
     if local:
@@ -265,6 +269,11 @@ class Essay:
     def has_history(self) -> bool:
         return len(self.versions) > 1
 
+    @property
+    def minutes(self) -> int:
+        """Estimated reading time at ~230 words per minute."""
+        return max(1, round(word_count(self.body) / 230))
+
 
 def compute_versions(root: Path | None, relpath: str, fallback_title: str) -> list[Version]:
     """Walk the note's git history and pick out the commits that count as versions.
@@ -302,12 +311,25 @@ def compute_versions(root: Path | None, relpath: str, fallback_title: str) -> li
     return versions
 
 
-def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
-    """Find every published note and build its Essay, including versions."""
-    essays: list[Essay] = []
+def vault_notes(vault: Path, cfg: dict):
+    """Every Markdown note in the vault, skipping Obsidian's settings folder and
+    the folders in `exclude_folders` (by default the templates folder, whose
+    templates may contain `publish: true`)."""
+    excluded = [vault / folder for folder in cfg["exclude_folders"]]
     for path in sorted(vault.rglob("*.md")):
         if ".obsidian" in path.relative_to(vault).parts:
             continue
+        if not any(path.is_relative_to(folder) for folder in excluded):
+            yield path
+
+
+def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
+    """Find every published note and build its Essay, including versions."""
+    books_dir = vault / cfg["books_folder"]
+    essays: list[Essay] = []
+    for path in vault_notes(vault, cfg):
+        if path.is_relative_to(books_dir):
+            continue  # book notes go to the Library instead
         meta, body = split_frontmatter(path.read_text(encoding="utf-8"), path.relative_to(vault))
         if not is_published(meta):
             continue
@@ -338,7 +360,7 @@ def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
         ))
 
     # Two notes with the same slug would overwrite each other, so stop.
-    reserved = {"tags", "attachments", "404.html", "index.html", ".nojekyll"}
+    reserved = {"tags", "library", "attachments", "404.html", "index.html", ".nojekyll"}
     reserved |= {p.name for p in (HERE / "static").iterdir()}
     seen: dict[str, Path] = {}
     for essay in essays:
@@ -352,6 +374,99 @@ def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
 
     essays.sort(key=lambda e: (e.date, e.title), reverse=True)  # newest first
     return essays
+
+
+# ---------------------------------------------------------------------------
+# Books (the Library)
+# ---------------------------------------------------------------------------
+# Every published note in the books folder is a book. Its properties describe
+# the book and its body holds your notes. Books have no versions.
+
+@dataclass
+class Book:
+    source: Path
+    name: str                 # file name without .md, for [[wikilinks]]
+    title: str
+    author: str
+    slug: str
+    url: str                  # e.g. /Oliver-Digests/library/the-idiot/
+    published: str            # year the book came out, as written
+    finished: dt.date | None  # when you finished reading it
+    rating: int | None        # 1-5
+    cover: str                # file name of an image in the vault, or a URL
+    description: str
+    tags: list[str]
+    body: str                 # your notes
+
+    @property
+    def has_notes(self) -> bool:
+        return bool(self.body.strip())
+
+    @property
+    def stars(self) -> str:
+        return "★" * self.rating + "☆" * (5 - self.rating) if self.rating else ""
+
+
+def parse_rating(value) -> int | None:
+    """Accepts 4, "4", "4/5" or 4.5 (rounded); anything else means no rating."""
+    match = re.match(r"\s*(\d+(?:\.\d+)?)", str(value or ""))
+    if not match:
+        return None
+    return min(5, max(1, round(float(match.group(1)))))
+
+
+def parse_cover(value) -> str:
+    """Obsidian stores a linked image as "[[cover.jpg]]"; accept that or a plain name/URL."""
+    text = str(value or "").strip().lstrip("!")
+    if text.startswith("[[") and text.endswith("]]"):
+        text = text[2:-2].split("|")[0]
+    return text.strip()
+
+
+def load_books(cfg: dict, vault: Path) -> list[Book]:
+    books_dir = vault / cfg["books_folder"]
+    books: list[Book] = []
+    seen: dict[str, Path] = {}
+    for path in vault_notes(vault, cfg):
+        if not path.is_relative_to(books_dir):
+            continue
+        meta, body = split_frontmatter(path.read_text(encoding="utf-8"), path.relative_to(vault))
+        if not is_published(meta):
+            continue
+        title = str(meta.get("title") or path.stem)
+        slug = slugify(meta.get("slug") or path.stem)
+        if slug in seen:
+            sys.exit(f"Book slug '{slug}' is used by both {seen[slug]} and {path}. "
+                     "Set a different `slug:` in one of them.")
+        seen[slug] = path
+        books.append(Book(
+            source=path,
+            name=path.stem,
+            title=title,
+            author=str(meta.get("author") or ""),
+            slug=slug,
+            url=f"{cfg['base_path']}/library/{slug}/",
+            published=str(meta.get("published") or meta.get("year") or ""),
+            finished=to_date(meta.get("finished")),
+            rating=parse_rating(meta.get("rating")),
+            cover=parse_cover(meta.get("cover")),
+            description=str(meta.get("description") or ""),
+            tags=parse_tags(meta.get("tags")),
+            body=clean_body(body, title),
+        ))
+    # Most recently finished first; books without a date go last, by title.
+    books.sort(key=lambda b: (b.finished is not None, b.finished or dt.date.min,
+                              b.title.casefold()), reverse=True)
+    return books
+
+
+def group_by_year(items, date_of) -> list[tuple[str, list]]:
+    """[(year, items)] in the items' existing order; undated items go under ''."""
+    groups: dict[str, list] = {}
+    for item in items:
+        d = date_of(item)
+        groups.setdefault(str(d.year) if d else "", []).append(item)
+    return list(groups.items())
 
 
 # ---------------------------------------------------------------------------
@@ -389,13 +504,16 @@ def md_escape(text: str) -> str:
 
 
 class Linker:
-    """Resolves Obsidian wikilinks and embeds against the set of published essays."""
+    """Resolves Obsidian wikilinks and embeds against published essays and books."""
 
-    def __init__(self, essays: list[Essay], vault: Path, out: Path, base_path: str):
+    def __init__(self, essays: list[Essay], books: list[Book], vault: Path, out: Path,
+                 base_path: str):
         self.base_path = base_path
         self.out = out
-        # Look notes up by file name, case-insensitive, as Obsidian does.
-        self.essays = {e.name.lower(): e for e in essays}
+        # Note name -> page URL, case-insensitive as in Obsidian. Only books
+        # with notes have a page. Essays win if a name is used twice.
+        self.targets = {b.name.lower(): b.url for b in books if b.has_notes}
+        self.targets |= {e.name.lower(): e.url for e in essays}
         # All files in the vault, for ![[embeds]], looked up by file name.
         self.files: dict[str, Path] = {}
         for p in sorted(vault.rglob("*")):
@@ -405,41 +523,50 @@ class Linker:
         # Links pointing at notes that aren't published.
         self.unresolved: set[str] = set()
 
-    def _essay_for(self, target: str) -> Essay | None:
+    def _url_for(self, target: str) -> str | None:
         name = target.strip().rsplit("/", 1)[-1]
         if name.lower().endswith(".md"):
             name = name[:-3]
-        return self.essays.get(name.lower())
+        return self.targets.get(name.lower())
 
-    def _embed(self, target: str, alias: str | None) -> str:
-        """![[image.png]]: copy the file into the output and return an image/link."""
-        file = self.files.get(target.strip().rsplit("/", 1)[-1].lower())
+    def asset_url(self, name: str) -> str | None:
+        """Copy a vault file (e.g. an image) into the output; return its URL."""
+        if re.match(r"https?://", name):
+            return name  # already on the web
+        file = self.files.get(name.strip().rsplit("/", 1)[-1].lower())
         if file is None or file.suffix.lower() == ".md":
-            # Embedding a note: we don't transclude, we just link it.
-            return self._link(target, alias)
+            return None
         if file.name not in self.copied:
             (self.out / "attachments").mkdir(parents=True, exist_ok=True)
             shutil.copy2(file, self.out / "attachments" / file.name)
             self.copied.add(file.name)
-        url = f"{self.base_path}/attachments/{quote(file.name)}"
+        return f"{self.base_path}/attachments/{quote(file.name)}"
+
+    def _embed(self, target: str, alias: str | None) -> str:
+        """![[image.png]]: copy the file into the output and return an image/link."""
+        url = self.asset_url(target)
+        if url is None:
+            # Embedding a note: we don't transclude, we just link it.
+            return self._link(target, alias)
+        name = target.strip().rsplit("/", 1)[-1]
         # In Obsidian, ![[img.png|300]] sets a width; any other alias is alt text.
-        if file.suffix.lower() in IMAGE_EXTENSIONS:
+        if Path(name).suffix.lower() in IMAGE_EXTENSIONS:
             if alias and re.fullmatch(r"\d+(x\d+)?", alias.strip()):
                 width = alias.strip().split("x")[0]
                 return f'<img src="{url}" alt="" width="{width}" loading="lazy">'
             return f"![{md_escape(alias or '')}]({url})"
-        return f"[{md_escape(alias or file.name)}]({url})"
+        return f"[{md_escape(alias or name)}]({url})"
 
     def _link(self, target: str, alias: str | None, heading: str = "") -> str:
         """[[Note|text]]: a link if Note is published, otherwise plain text."""
         text = (alias or target).strip()
         if not target.strip():  # [[#Heading]] points inside the same note
             return md_escape(text or heading.lstrip("#").strip())
-        essay = self._essay_for(target)
-        if essay is None:
+        url = self._url_for(target)
+        if url is None:
             self.unresolved.add(target.strip())
             return md_escape(text)
-        return f"[{md_escape(text)}]({essay.url})"
+        return f"[{md_escape(text)}]({url})"
 
     def replace(self, markdown: str) -> str:
         def sub(m: re.Match) -> str:
@@ -581,8 +708,7 @@ def diff_bodies(old_body: str, new_body: str) -> dict:
 # Pages
 # ---------------------------------------------------------------------------
 
-def mailto(cfg: dict, title: str, version: int) -> str:
-    subject = cfg["email_subject"].format(title=title, version=version)
+def mailto(cfg: dict, subject: str) -> str:
     return f"mailto:{cfg['email']}?subject={quote(subject, safe='')}"
 
 
@@ -629,7 +755,8 @@ def build(cfg: dict, config_dir: Path) -> None:
 
     root = find_repo_root(vault)  # the vault may even be its own git repo
     essays = load_essays(cfg, vault, root)
-    linker = Linker(essays, vault, out, cfg["base_path"])
+    books = load_books(cfg, vault)
+    linker = Linker(essays, books, vault, out, cfg["base_path"])
     md = make_markdown()
     site = Site(cfg, out)
 
@@ -641,7 +768,8 @@ def build(cfg: dict, config_dir: Path) -> None:
         site.write(f"{essay.slug}/index.html", "essay.html",
                    essay=essay, version=cur, is_current=True,
                    title=essay.title, content=render(essay.body),
-                   mailto=mailto(cfg, essay.title, cur.number))
+                   mailto=mailto(cfg, cfg["email_subject"].format(
+                       title=essay.title, version=cur.number)))
 
         if not essay.has_history:
             continue  # a single version gets no history, version or diff pages
@@ -652,37 +780,54 @@ def build(cfg: dict, config_dir: Path) -> None:
             site.write(f"{essay.slug}/v/{v.number}/index.html", "essay.html",
                        essay=essay, version=v, is_current=False,
                        title=v.title, content=render(v.body),
-                       mailto=mailto(cfg, v.title, v.number))
+                       mailto=mailto(cfg, cfg["email_subject"].format(
+                           title=v.title, version=v.number)))
 
         for prev, v in zip(essay.versions, essay.versions[1:]):
             site.write(f"{essay.slug}/diff/{v.number}/index.html", "diff.html",
                        essay=essay, version=v, previous=prev,
                        diff=diff_bodies(prev.body, v.body))
 
-    # Tags: one page per tag, plus an overview.
+    # The Library: a list of every book, and a page for each book with notes.
+    covers = {b.slug: linker.asset_url(b.cover) if b.cover else None for b in books}
+    for book in books:
+        if book.cover and covers[book.slug] is None:
+            print(f"  warning: cover '{book.cover}' not found for {book.source.name}")
+        if book.has_notes:
+            site.write(f"library/{book.slug}/index.html", "book.html",
+                       book=book, cover=covers[book.slug],
+                       content=render_markdown(md, linker, book.body),
+                       mailto=mailto(cfg, cfg["book_email_subject"].format(
+                           title=book.title, author=book.author)))
+    site.write("library/index.html", "library.html", books=books, covers=covers,
+               years=group_by_year(books, lambda b: b.finished))
+
+    # Tags: one page per tag (essays and books), plus an overview.
     # Grouped by slug, so "AI" and "ai" share one page, named by the first spelling seen.
     names: dict[str, str] = {}
-    tags: dict[str, list[Essay]] = {}
-    for essay in essays:
-        for tag in essay.tags:
-            name = names.setdefault(tag_slug(tag), tag)
-            tags.setdefault(name, []).append(essay)
+    tags: dict[str, dict[str, list]] = {}
+    for kind, items in (("essays", essays), ("books", books)):
+        for item in items:
+            for tag in item.tags:
+                name = names.setdefault(tag_slug(tag), tag)
+                tags.setdefault(name, {"essays": [], "books": []})[kind].append(item)
     tag_list = sorted(tags.items(), key=lambda kv: kv[0].casefold())
     for tag, tagged in tag_list:
-        site.write(f"tags/{tag_slug(tag)}/index.html", "tag.html", tag=tag, essays=tagged)
+        site.write(f"tags/{tag_slug(tag)}/index.html", "tag.html", tag=tag,
+                   essays=tagged["essays"], books=tagged["books"])
     site.write("tags/index.html", "tags.html", tags=tag_list)
 
-    site.write("index.html", "index.html", essays=essays)
+    site.write("index.html", "index.html", essays=essays,
+               years=group_by_year(essays, lambda e: e.date))
     site.write("404.html", "404.html")
 
-    for asset in (HERE / "static").iterdir():
-        shutil.copy2(asset, out / asset.name)
+    shutil.copytree(HERE / "static", out, dirs_exist_ok=True)  # CSS, JS, fonts
     (out / ".nojekyll").touch()
 
     if linker.unresolved:
         print("  links shown as plain text (note not published): "
               + ", ".join(sorted(linker.unresolved)))
-    print(f"Done: {len(essays)} essays, {len(tags)} tags.")
+    print(f"Done: {len(essays)} essays, {len(books)} books, {len(tags)} tags.")
 
 
 def main() -> None:

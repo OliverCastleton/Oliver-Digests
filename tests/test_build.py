@@ -77,6 +77,7 @@ Other.
 | [[On Trust\|trust essay]] | ![[diagram.png\|200]] |
 
 Jump to [[#Some Heading]]. Secret: [[Draft Note|<b>bold</b> 1. Intro]]
+I reviewed [[The Idiot]] and [[Short Book]].
 
 ````
 ```
@@ -128,6 +129,16 @@ def main():
         repo.write("vault/Other Essay.md", OTHER)
         (repo.path / "vault/attachments").mkdir(parents=True)
         (repo.path / "vault/attachments/diagram.png").write_bytes(b"\x89PNG fake")
+        (repo.path / "vault/attachments/idiot.jpg").write_bytes(b"fake jpeg")
+        # Books: one with notes and a cover, one without notes, one unpublished.
+        repo.write("vault/books/The Idiot.md", "---\nauthor: Fyodor Dostoevsky\npublished: 1869\n"
+                   "finished: 2026-03-02\nrating: 5\ncover: \"[[idiot.jpg]]\"\n"
+                   "tags: [novels, Ethics]\npublish: true\n---\nA *great* novel. See [[On Trust]].\n")
+        repo.write("vault/books/Short Book.md", "---\nauthor: A. Writer\nfinished: 2025-11-20\n"
+                   "rating: 3/5\npublish: true\n---\n")
+        repo.write("vault/books/Secret Book.md", "---\npublish: false\n---\nPrivate.\n")
+        # Templates may say publish: true but must never be built.
+        repo.write("vault/templates/Book.md", "---\ntitle:\npublish: true\n---\n")
 
         # 1. A draft commit (publish: false) must never become a version.
         repo.write("vault/essays/trust.md", essay("Early secret draft.", publish="false"))
@@ -235,7 +246,34 @@ def main():
         check("numeric tag page", (site / "tags/2024/index.html").exists())
         ethics = read(site, "tags/ethics/index.html")
         check("case-insensitive tag merge", "On Trust" in ethics and "Other Essay" in ethics
-              and len(list((site / "tags").iterdir())) == 4)  # 2024, ethics, society, index
+              and len(list((site / "tags").iterdir())) == 5)  # 2024 ethics novels society index
+
+        # Library
+        library = read(site, "library/index.html")
+        idiot = read(site, "library/the-idiot/index.html")
+        check("library lists books, newest first",
+              library.index("The Idiot") < library.index("Short Book"))
+        check("library groups by year", ">2026</h2>" in library and ">2025</h2>" in library)
+        check("unpublished book hidden", "Secret Book" not in library)
+        check("book without notes has no page", not (site / "library/short-book").exists()
+              and 'href="/test-repo/library/short-book/"' not in library)
+        check("book cover copied", (site / "attachments/idiot.jpg").exists()
+              and 'src="/test-repo/attachments/idiot.jpg"' in idiot)
+        check("book rating stars", "★★★★★" in idiot and "★★★☆☆" in library)
+        check("book notes rendered with links", "<em>great</em>" in idiot
+              and 'href="/test-repo/on-trust/"' in idiot)
+        check("wikilink to book page", 'href="/test-repo/library/the-idiot/">The Idiot</a>' in other)
+        check("wikilink to book without notes is text", "and Short Book." in other)
+        check("book email subject", "Re%3A%20your%20notes%20on%20The%20Idiot" in idiot)
+        check("tag page includes books", "The Idiot" in ethics
+              and (site / "tags/novels/index.html").exists())
+        check("books are not essays", not (site / "the-idiot").exists())
+        check("templates folder never built", not (site / "book").exists())
+
+        # Theme toggle and fonts
+        check("theme toggle and script", 'class="theme-toggle"' in live and "theme.js" in live
+              and (site / "theme.js").exists())
+        check("fonts copied", (site / "fonts/newsreader-latin-opsz-normal.woff2").exists())
 
         # Index, tags, exclusions
         index = read(site, "index.html")
