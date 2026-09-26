@@ -8,6 +8,33 @@
     {% if intro %}{{ intro|safe }}{% else %}<p>{{ site.description }}</p>{% endif %}
   </div>
 
+  {# Up to three notes with `pin` in their properties, essays or books. #}
+  {% if pinned %}
+  <h2 class="margin margin-label">Pinned</h2>
+  <div class="column">
+    <ol class="pinned-list">
+      {% for item in pinned %}
+      {% if item.kind == "essay" %}
+      <li class="pinned">
+        <a class="entry-title" href="{{ item.url }}" style="view-transition-name: e-{{ item.slug }}">{{ item.title }}</a>
+        {% if item.description %}<p class="entry-desc">{{ item.description }}</p>{% endif %}
+        <p class="entry-date"><time datetime="{{ item.date.isoformat() }}">{{ item.date|date }}</time>, {{ item.minutes }} minute read</p>
+      </li>
+      {% else %}
+      <li class="pinned pinned-book">
+        <a href="{{ item.url if item.has_notes else base ~ '/library/#' ~ item.slug }}" tabindex="-1" aria-hidden="true">{{ m.cover(item, covers[item.slug]) }}</a>
+        <div>
+          <a class="entry-title" href="{{ item.url if item.has_notes else base ~ '/library/#' ~ item.slug }}">{{ item.title }}</a>
+          {% if item.author %}<p class="book-author">Notes on the book by {{ item.author }}</p>{% endif %}
+          {% if item.description %}<p class="entry-desc">{{ item.description }}</p>{% endif %}
+        </div>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
   {% if essays %}
   <h2 class="margin margin-label">Latest essays</h2>
   <div class="column">

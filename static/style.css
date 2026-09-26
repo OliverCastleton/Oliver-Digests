@@ -458,6 +458,16 @@ hr.footnotes-sep::after { content: none; }
 .more { margin: 0.25rem 0 0; font-style: italic; }
 .more a { color: var(--pen); text-decoration: none; }
 
+/* Pinned notes: the same entries, set a size larger. */
+.pinned-list { list-style: none; margin: 0; padding: 0; }
+.pinned { margin: 0 0 2.1rem; }
+.pinned:last-child { margin-bottom: 0; }
+.pinned .entry-title { font-size: 1.75rem; line-height: 1.18; }
+.pinned .entry-desc { font-size: 1.2rem; }
+.pinned-book { display: grid; grid-template-columns: 4.75rem 1fr; gap: 1.35rem; align-items: start; }
+.pinned-book > a { background: none; }
+.pinned-book .cover { width: 4.75rem; }
+
 /* A shelf of covers */
 .shelf {
   list-style: none;

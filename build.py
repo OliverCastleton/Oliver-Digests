@@ -164,6 +164,23 @@ def parse_tags(value) -> list[str]:
     return sorted((t for t in tags if t), key=str.lower)
 
 
+MAX_PINS = 3  # notes pinned to the homepage
+
+
+def parse_pin(value) -> int | None:
+    """`pin: true` pins a note to the homepage; `pin: 1`, `2` or `3` also sets
+    its position. Returns a sort key (lower first) or None when not pinned."""
+    if value is True or str(value).strip().lower() == "true":
+        return MAX_PINS + 1          # after any numbered pins
+    if isinstance(value, bool):
+        return None                  # pin: false
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
 def tag_slug(tag: str) -> str:
     """'Society' and 'society' share a page; non-Latin tags like '日本' keep their letters."""
     return re.sub(r"\W+", "-", tag.casefold()).strip("-_") or "tag"
@@ -269,6 +286,8 @@ class Essay:
     tags: list[str]
     body: str            # current content from the working tree (= HEAD in CI)
     versions: list[Version] = field(default_factory=list)
+    pin: int | None = None   # see parse_pin
+    kind = "essay"
 
     @property
     def current(self) -> Version:
@@ -365,6 +384,7 @@ def load_essays(cfg: dict, vault: Path, root: Path | None) -> list[Essay]:
             date=to_date(meta.get("date")) or versions[0].date,
             description=str(meta.get("description") or ""),
             tags=parse_tags(meta.get("tags")),
+            pin=parse_pin(meta.get("pin", meta.get("pinned"))),
             body=clean_body(body, title),
             versions=versions,
         ))
@@ -408,6 +428,8 @@ class Book:
     description: str
     tags: list[str]
     body: str                 # your notes
+    pin: int | None = None    # see parse_pin
+    kind = "book"
 
     @property
     def has_notes(self) -> bool:
@@ -469,6 +491,7 @@ def load_books(cfg: dict, vault: Path) -> list[Book]:
             cover=parse_cover(meta.get("cover")),
             description=str(meta.get("description") or ""),
             tags=parse_tags(meta.get("tags")),
+            pin=parse_pin(meta.get("pin", meta.get("pinned"))),
             body=clean_body(body, title),
         ))
     # Most recently finished first; books without a date go last, by title.
@@ -881,8 +904,23 @@ def build(cfg: dict, config_dir: Path) -> None:
     if home.exists():
         _, home_body = split_frontmatter(home.read_text(encoding="utf-8"), home.name)
         intro = render_markdown(md, linker, clean_body(home_body, ""))
-    site.write("index.html", "home.html", intro=intro, essays=essays[:5],
-               books=books[:6], covers=covers, tags=tag_list, more_essays=len(essays) > 5)
+    # Pinned notes (essays or books) go first, up to MAX_PINS, ordered by their
+    # pin number, then newest first. They aren't repeated in the lists below.
+    def newest_first(item) -> int:
+        d = item.date if item.kind == "essay" else item.finished
+        return -(d or dt.date.min).toordinal()
+
+    pinned = sorted((x for x in [*essays, *books] if x.pin is not None),
+                    key=lambda x: (x.pin, newest_first(x)))
+    if len(pinned) > MAX_PINS:
+        print(f"  warning: {len(pinned)} notes are pinned; only {MAX_PINS} fit on the "
+              "homepage. Not shown: " + ", ".join(x.title for x in pinned[MAX_PINS:]))
+        pinned = pinned[:MAX_PINS]
+    latest = [e for e in essays if e not in pinned]
+    shelf = [b for b in books if b not in pinned]
+    site.write("index.html", "home.html", intro=intro, pinned=pinned, covers=covers,
+               essays=latest[:5], more_essays=len(latest) > 5,
+               books=shelf[:6], tags=tag_list)
 
     site.write("essays/index.html", "essays.html", essays=essays,
                years=group_by_year(essays, lambda e: e.date))

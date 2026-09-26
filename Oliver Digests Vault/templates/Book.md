@@ -7,6 +7,7 @@ rating:
 cover:
 description:
 tags: []
+pin:
 publish: true
 ---
 

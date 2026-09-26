@@ -18,6 +18,20 @@ books_folder: books
 # Subject line of "Email me about this book". {title} and {author} are filled in.
 book_email_subject: "Re: your notes on {title}"
 
+# The note (at the top of the vault) used as the homepage intro.
+home_note: Home
+
+# Languages in the Translate menu: language code, then its name in that language.
+translate_languages:
+  it: Italiano
+  es: Español
+  fr: Français
+  de: Deutsch
+  pt: Português
+  nl: Nederlands
+  ja: 日本語
+  zh: 中文
+
 # Vault folders that are never published (note templates live here).
 exclude_folders: [templates]
 

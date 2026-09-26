@@ -70,6 +70,7 @@ OTHER = r"""---
 publish: true
 date: 2025-12-01
 tags: [2024, ETHICS]
+pin: 2
 ---
 Other.
 
@@ -140,9 +141,11 @@ def main():
         # Books: one with notes and a cover, one without notes, one unpublished.
         repo.write("vault/books/The Idiot.md", "---\nauthor: Fyodor Dostoevsky\npublished: 1869\n"
                    "finished: 2026-03-02\nrating: 5\ncover: \"[[idiot.jpg]]\"\n"
-                   "tags: [novels, Ethics]\npublish: true\n---\nA *great* novel. See [[On Trust]].\n")
+                   "tags: [novels, Ethics]\npin: 1\npublish: true\n---\nA *great* novel. See [[On Trust]].\n")
         repo.write("vault/books/Short Book.md", "---\nauthor: A. Writer\nfinished: 2025-11-20\n"
-                   "rating: 3/5\npublish: true\n---\n")
+                   "rating: 3/5\npin: true\npublish: true\n---\n")
+        # A fourth pin: older than Short Book, so it's the one left off the homepage.
+        repo.write("vault/Old Pin.md", "---\ndate: 2020-01-01\npin: true\npublish: true\n---\nOld.\n")
         repo.write("vault/books/Secret Book.md", "---\npublish: false\n---\nPrivate.\n")
         # Templates may say publish: true but must never be built.
         repo.write("vault/templates/Book.md", "---\ntitle:\npublish: true\n---\n")
@@ -292,6 +295,13 @@ def main():
         check("home intro from Home.md",
               'Hello, I write about <a href="/test-repo/on-trust/">trust</a>' in home)
         check("Home.md is not an essay", not (site / "home").exists())
+        pinned_html = home.split('class="pinned-list"', 1)[1].split("</ol>", 1)[0]
+        check("pins: numbered first, at most 3",
+              pinned_html.index("The Idiot") < pinned_html.index("Other Essay")
+              < pinned_html.index("Short Book") and "Old Pin" not in pinned_html)
+        check("pins: warning for the extra pin", "only 3 fit" in result.stdout)
+        check("pins: not repeated below", home.count("e-other-essay") == 1
+              and home.count("b-the-idiot") == 1 and "Old Pin" in home)
         check("home lists essays, books and topics",
               "On Trust" in home and "b-the-idiot" in home and "/tags/novels/" in home)
 

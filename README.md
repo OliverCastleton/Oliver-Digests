@@ -4,6 +4,9 @@ A minimal personal site for essays and book notes. You write in the Obsidian vau
 
 - **Essays** keep a public revision history built from git: a list of versions, each old version as it was, and a word-level diff of what changed.
 - **Library** lists the books you've read. Each book with notes gets its own page.
+- **Homepage** opens with your intro (from `Home.md`), then up to three pinned notes, the latest essays, recently read books and topics.
+- **Search** covers every essay and book note. Open it with the Search link, `/` or Ctrl+K.
+- **Translate** reads any page in another language.
 - **Light/dark theme** follows the reader's system setting, and a button in the header switches it.
 
 ## Files
@@ -11,6 +14,7 @@ A minimal personal site for essays and book notes. You write in the Obsidian vau
 | Path | What it is |
 |---|---|
 | `Oliver Digests Vault/` | The Obsidian vault. Open this folder as a vault in Obsidian. |
+| `…/Home.md` | The intro at the top of the homepage. Always shown; never listed as an essay. |
 | `…/essays/` | Where new notes go. Any folder works, except `books/` and `templates/` (never published). |
 | `…/books/` | One note per book. These make up the Library. |
 | `…/attachments/` | Where Obsidian puts pasted images, including book covers. |
@@ -19,7 +23,7 @@ A minimal personal site for essays and book notes. You write in the Obsidian vau
 | `config.yaml` | Site title, author, email, address. **The only file you normally edit.** |
 | `build.py` | The whole build, in one commented Python file. |
 | `templates/` | Jinja2 HTML templates. |
-| `static/` | `style.css`, `theme.js` (toggle), `email.js` (quote a selection), and `fonts/`. |
+| `static/` | `style.css`, the scripts (`theme.js`, `search.js`, `translate.js`, `email.js`) and `fonts/`. |
 | `tests/test_build.py` | End-to-end test in a throwaway git repo. |
 | `.github/workflows/deploy.yml` | Build and deploy on push to `main`. |
 
@@ -64,6 +68,35 @@ GitHub Pages on a free account requires a **public** repository. Your vault, inc
 Open `Oliver Digests Vault/` as a vault. The included settings put new notes in `essays/` and pasted images in `attachments/`, and they update links when you rename notes.
 
 To start from a template, use the core **Templates** plugin (its folder is set to `templates`): create a note, then run "Insert template" and pick **Essay** or **Book**.
+
+## Example notes
+
+The vault includes published examples, all tagged `example`, so you can see every feature working:
+
+| Note | Shows |
+|---|---|
+| `essays/A Tour of This Site.md` | Highlights, footnotes, quotes, links to essays and books, a link to an unpublished note (plain text), a private `%% comment %%`, an embedded image, a table. Pinned first. |
+| `essays/On Keeping a Commonplace Book.md` | An ordinary essay that links to book notes. Pinned second. |
+| `books/Meditations.md` | A book with a cover image, rating and notes. Pinned third. |
+| `books/How to Read a Book.md` | A book with notes but no cover image, so it gets a plain cloth binding. |
+| `books/The Elements of Style.md` | A book with properties only: listed in the Library, with no page of its own. |
+
+The images are in `attachments/` (`how-it-works.svg`, `meditations-cover.svg`).
+
+Version history only comes from real `rev:` commits, so the examples start with no History link. To see it, edit the tour essay and commit with a message like `rev: Tried out versions`. Its History page and a word-by-word diff will appear.
+
+When you're done with the examples, delete them, or set `publish: false` to keep them for reference.
+
+## Pinning notes to the homepage
+
+Add `pin` to the properties of up to three essays or books:
+
+```yaml
+pin: 1        # a number sets the order: 1 first, then 2, then 3
+pin: true     # pinned, after any numbered pins, newest first
+```
+
+Pinned notes appear in a "Pinned" section right after your intro, and aren't repeated in the lists below it. If more than three are pinned, the build shows the first three and prints a warning naming the rest. Remove `pin` (or set `pin: false`) to unpin. Both templates include an empty `pin:` property.
 
 ## Daily workflow: essays
 
@@ -128,11 +161,17 @@ Your notes go here: quotes, thoughts, a review.
 
 ## What readers see
 
-- **Home page:** all essays grouped by year, newest first, with description and reading time.
+- **Homepage:** your intro from `Home.md`, the five latest essays, a shelf of recently read books, and your topics.
+- **Essays page:** every essay, grouped by year, newest first.
 - **Essay page:** the current text, plus "Email me about this". The email subject is prefilled as `Re: <Title> (v<N>)`. If the reader has selected a passage, it is quoted in the email body.
 - **History link:** shown only once an essay has a v2. It leads to a list of versions, each with its date and change note, a link to read that version, and a diff against the previous version.
 - **Library:** books grouped by the year you finished them, with cover, author and rating, and a notes page per book with notes.
-- **Tags:** one page per tag, listing both essays and books.
+- **Topics:** one page per tag, listing both essays and books.
+- **Search:** a search window over every essay and book note. Words match the start of words, and accents and capitals are ignored. Arrow keys move through the results and Enter opens one. Without JavaScript the Search link opens a page pointing to the essay, library and topic lists instead.
+- **Translate button (文A) in the header:** a menu of languages.
+  - **Built-in translation:** browsers that can translate on the device (recent Chrome and Edge on desktop) translate the page in place, and nothing is sent anywhere. The language stays on as the reader moves between pages until they click "Show original".
+  - **Google Translate:** other browsers open the page there. This only works once the site is online.
+  - **Choosing languages:** edit `translate_languages` in `config.yaml`.
 - **Theme button (moon/sun) in the header:** switches between light and dark. The choice is remembered on that reader's browser. Without JavaScript the button is hidden and the site follows the system setting.
 
 ## Writing notes
@@ -153,7 +192,7 @@ Your notes go here: quotes, thoughts, a review.
 - **Properties-only edits:** frontmatter is never part of a diff. A `rev:` commit that only changes properties creates a version whose diff says the text is unchanged.
 - **Branches and merges:** a merge commit whose message starts with `rev:` creates a version, like any other commit.
 - **Renaming and heavily rewriting in the same commit:** git may not recognise the rename, and the history would restart at v1. Rename in one commit and rewrite in the next.
-- **Reserved slugs:** `tags`, `library` and `attachments` are used by the site, so the build stops with a message if an essay would use one.
+- **Reserved slugs:** `essays`, `library`, `tags`, `search` and `attachments` are used by the site, so the build stops with a message if an essay would use one.
 - **Code:** wikilinks inside fenced code blocks and `inline code` are left alone. Indented (4-space) code blocks aren't detected, so use fences.
 
 ## Local preview
@@ -189,20 +228,31 @@ This creates a throwaway git repo in a temp folder and never touches this repo. 
 
 The repo also has three books: one with notes and a cover, one without notes, and one unpublished.
 
-It then builds the site and runs 49 checks, covering:
+It then builds the site and runs 61 checks, covering:
 
 - **Versions:** v1–v4 exist, with their change notes.
 - **Diffs:** the typo fix shows up in the v2 diff, changes are marked word by word with `<del>`/`<ins>`, and no frontmatter appears.
 - **Links and embeds:** links to unpublished notes are plain text, images are copied, footnotes render, and table-escaped links work.
 - **Emails and tags:** mailto subjects and case-insensitive tags are correct.
 - **Library:** ordering and year groups, covers, star ratings, book pages only for books with notes, and links from essays to books.
-- **Theme toggle and fonts:** both are present.
+- **Homepage:** the intro from `Home.md`, and recent essays, books and topics.
+- **Pins:** numbered pins come first, only three are shown (with a warning for the rest), and pinned notes aren't repeated.
+- **Search:** the index holds plain text, links books without notes to the library, and leaves out unpublished notes.
+- **Translate, theme toggle and fonts:** all present, with translate links pointing at each page.
 
 It also checks that a repo with no commits yet still builds.
 
 ## Design and customizing
 
-- **Name, email, address:** `config.yaml`. `email_subject` and `book_email_subject` set the email subject lines.
-- **Fonts:** [Newsreader](https://github.com/productiontype/Newsreader) for reading and [Inter](https://rsms.me/inter/) for small interface text. Both are self-hosted in `static/fonts/` under the SIL Open Font License (licenses included), so the site makes no requests to other servers.
-- **Colors:** CSS variables at the top of `static/style.css`: one light block, and a dark block that appears twice (once for the system setting, once for the toggle). Keep the two dark blocks identical.
-- **Page layout:** `templates/*.html`.
+The look is a notebook with notes in the margin:
+
+- **Type:** one typeface, [Newsreader](https://github.com/productiontype/Newsreader). It's upright for reading and italic for everything beside the text: dates, versions, years and section names. On wide screens these sit in a margin column to the left of the text; on phones they stack above it. The font is self-hosted in `static/fonts/` under the SIL Open Font License (license included), so the site makes no requests to other servers.
+- **Colour:** blue-black ink on cool paper. The one bright colour is highlighter yellow. It shows when you point at a link, when you select text, on search matches, for `==highlights==`, and under the current page in the navigation.
+- **Motion:** only in response to the reader. Pages crossfade, an essay title glides from a list into its page, and a book cover glides into its notes page. The theme spreads out from its button, and menus open smoothly. Readers who have asked their system for reduced motion get none of it.
+
+To change things:
+
+- **Name, email, address:** `config.yaml`. `email_subject` and `book_email_subject` set the email subject lines, and `translate_languages` sets the Translate menu.
+- **Homepage intro:** edit `Home.md` in the vault.
+- **Colours:** CSS variables at the top of `static/style.css`: one light block, and a dark block that appears twice (once for the system setting, once for the toggle). Keep the two dark blocks identical.
+- **Page layout:** `templates/*.html`. Shared list items and covers are in `templates/_macros.html`.
