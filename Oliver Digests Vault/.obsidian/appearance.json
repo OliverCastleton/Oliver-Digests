@@ -1,1 +1,8 @@
-{}
+{
+  "interfaceFontFamily": "",
+  "textFontFamily": "Bookman Old Style",
+  "baseFontSizeAction": true,
+  "cssTheme": "Ukiyo",
+  "baseFontSize": 22,
+  "showRibbon": false
+}
