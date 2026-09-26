@@ -15,8 +15,8 @@ views:
         direction: DESC
   - type: cards
     name: Covers
-    image: note.cover
     order:
       - file.name
       - author
       - rating
+    image: note.cover
