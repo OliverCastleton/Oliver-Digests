@@ -26,6 +26,8 @@ A minimal personal site for essays and book notes. You write in the Obsidian vau
 | `static/` | `style.css`, the scripts (`theme.js`, `search.js`, `translate.js`, `email.js`) and `fonts/`. |
 | `tests/test_build.py` | End-to-end test in a throwaway git repo. |
 | `.github/workflows/deploy.yml` | Build and deploy on push to `main`. |
+| `medium_sync.py` | Copies essays and book notes to Medium (see [Medium](#medium)). |
+| `.github/workflows/medium.yml` | Runs `medium_sync.py` after every deploy. |
 
 ## One-time setup
 
@@ -131,7 +133,7 @@ Pinned notes appear in a "Pinned" section right after your intro, and aren't rep
 
    The Obsidian Git plugin can do the same from inside Obsidian. Just write the commit message yourself when a change should count as a version.
 
-3. **Push.** The Action rebuilds and deploys in about a minute.
+3. **Push.** The Action rebuilds and deploys in about a minute. If the [Medium](#medium) sync is set up, it then copies new and changed notes to Medium, whatever the commit message.
 
 ## The Library: book notes
 
@@ -195,6 +197,89 @@ Your notes go here: quotes, thoughts, a review.
 - **Reserved slugs:** `essays`, `library`, `tags`, `search` and `attachments` are used by the site, so the build stops with a message if an essay would use one.
 - **Code:** wikilinks inside fenced code blocks and `inline code` are left alone. Indented (4-space) code blocks aren't detected, so use fences.
 
+## Medium
+
+Essays and book notes can be copied to Medium automatically. After every successful deploy, the **Sync to Medium** workflow compares each note with what it last sent:
+
+- **New notes** are posted as new Medium stories.
+- **Edited notes** have their Medium story's text replaced and republished.
+- **Unchanged notes** are skipped.
+
+**When it runs:** after every push to `main` that deploys the site, not only after `rev:` commits. It doesn't look at commit messages. It compares each note's text, title and tags with what it last sent to Medium:
+
+| You push… | On the site | On Medium |
+|---|---|---|
+| a new note with `publish: true` | new page | new story |
+| a `rev:` commit that changes a note | new version, with a diff | the story's text is replaced |
+| a typo fix (no `rev:`) | live page updated, no new version | the story's text is replaced too |
+| changes to notes that aren't published, or to anything but notes | — | nothing |
+| several commits at once | one deploy | one sync, with the final text |
+
+Medium has no version history, so there's no `rev:` distinction there: the story always shows the current text. Readers who want the history follow the "Version history" link at the end of the story, which appears once an essay has a v2.
+
+Each story ends with "Originally published at Oliver Digests", which links back to the site. Links and images point at the live site, and book notes are titled "Notes on <Title>" (`medium.book_title`). Tags become Medium topics (the first five) when a story is first published.
+
+**How it works, and the catch.** Medium's API can't edit stories, and it stopped giving out access tokens in 2023. So `medium_sync.py` opens a real Chrome, logs in with your Medium cookies, and uses the editor like you would: it pastes the story in and presses Publish. This has three consequences:
+
+- **It can break.** When Medium changes its editor, the sync fails with a screenshot. It doesn't post anything broken; the failed stories are retried on the next run. Every Medium-specific selector is in the `MediumSession` class in `medium_sync.py`.
+- **It may be blocked.** Medium's bot check (Cloudflare) blocks headless browsers outright, so the sync always uses a visible window (a virtual screen on GitHub). It may also block GitHub's servers. If that keeps happening, run the sync from your own computer (below).
+- **It's against the grain of Medium's terms.** Automating the website is likely not allowed by Medium's terms of service. You use it at your own risk.
+
+### Setup
+
+1. **Copy your Medium cookies.** Log in to medium.com in your browser, then open DevTools (F12) → **Application** → **Cookies** → `https://medium.com`. Copy the values of `sid` and `uid`.
+2. **Add them as a secret.** On GitHub, open **Settings → Secrets and variables → Actions → New repository secret**. Name it `MEDIUM_COOKIES`, and give it this value:
+
+   ```
+   sid=<your sid value>; uid=<your uid value>
+   ```
+
+   A JSON cookie export (e.g. from the Cookie-Editor extension) works too.
+3. **Push, or run it now.** The sync runs after the next deploy. To run it straight away, open **Actions → Sync to Medium → Run workflow**.
+
+Treat the cookies like a password: anyone who has them can use your Medium account. Logging out of Medium in that browser ends the session, and the sync stops with "Not logged in". When that happens, copy fresh cookies into the secret.
+
+### Settings (`config.yaml`)
+
+```yaml
+medium:
+  status: public                  # or draft: stories stay drafts and you press Publish on Medium
+  essays: true
+  books: true                     # books with notes only
+  book_title: "Notes on {title}"
+  max_per_run: 10                 # the rest wait for the next run, so a first sync doesn't post 50 at once
+```
+
+### Good to know
+
+- **The sync state.** The record of which note is which Medium story is `medium-state.json` on its own `medium-state` branch. The workflow saves it after every story, so an interrupted run never posts a duplicate. It doesn't add commits to `main`. Don't delete that branch: without it, every note would be posted again.
+- **Unpublishing or deleting a note** leaves its Medium story alone. The sync lists it, and you can delete it on Medium yourself.
+- **Editing on Medium:** the next time the note changes, the sync overwrites the Medium story with the site's text. Make your edits in Obsidian.
+- **Stories already on Medium:** to have the sync update an existing story instead of posting a copy, link them once. The story id is the hex string at the end of its URL. Run this once; it saves the link to the `medium-state` branch, and the next sync updates the story:
+
+  ```sh
+  python medium_sync.py --link essay:on-trust=1a2b3c4d5e6f
+  ```
+
+  Keys are `essay:<slug>` or `book:<slug>`. `--dry-run` lists them.
+- **Canonical link:** Medium's setting for the canonical link (which tells search engines the site is the original) isn't set automatically. You can set it by hand under a story's **Settings → Advanced settings**.
+- **Formatting:** Medium has only two heading sizes and no tables or highlights. Tables become plain preformatted text, and highlights become plain text.
+
+### Running it on your computer
+
+```sh
+pip install -r requirements.txt -r requirements-medium.txt
+python -m playwright install chromium
+
+python medium_sync.py --dry-run                 # what would be posted or updated; changes nothing
+python medium_sync.py --export medium_preview   # each story as an HTML file, to see what Medium will get
+
+# PowerShell: $env:MEDIUM_COOKIES = "sid=...; uid=..."    macOS/Linux: export MEDIUM_COOKIES="sid=...; uid=..."
+python medium_sync.py                           # sync; a browser window opens and does the work
+```
+
+It reads and saves the same `medium-state` branch as the workflow, so the two never post the same note twice. Other options: `--only essay:on-trust` syncs a single note, `--force` updates every story, and `--limit N` caps one run.
+
 ## Local preview
 
 ```sh
@@ -241,6 +326,12 @@ It then builds the site and runs 61 checks, covering:
 - **Translate, theme toggle and fonts:** all present, with translate links pointing at each page.
 
 It also checks that a repo with no commits yet still builds.
+
+```sh
+python tests/test_medium.py
+```
+
+Tests the Medium sync without a browser or a Medium account: how notes are rendered for Medium, which ones count as new or changed, cookie parsing, and saving the state on a branch (in a throwaway repo).
 
 ## Design and customizing
 

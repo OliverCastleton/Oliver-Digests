@@ -16,3 +16,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .omc/
+
+# Medium sync: failure screenshots and a local state file (--state)
+medium-screenshots/
+.medium-state.json

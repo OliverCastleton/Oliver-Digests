@@ -1,0 +1,71 @@
+# Mirrors the essays and book notes to Medium after every successful deploy,
+# so Medium gets the same text as the site (new notes posted, edited ones updated).
+# One-time setup: add the MEDIUM_COOKIES secret (README, "Medium"). Without it
+# this workflow does nothing.
+name: Sync to Medium
+
+on:
+  workflow_run:
+    workflows: [Deploy site]
+    types: [completed]
+  workflow_dispatch:        # "Run workflow" button, e.g. after refreshing the cookies
+    inputs:
+      force:
+        description: Update every story, changed or not
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # saves the sync state on the medium-state branch
+
+# One sync at a time, and never cancel one halfway through a story.
+concurrency:
+  group: medium-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # After a deploy, only if it succeeded: images on Medium load from the live site.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      MEDIUM_COOKIES: ${{ secrets.MEDIUM_COOKIES }}
+    steps:
+      - name: Check for the MEDIUM_COOKIES secret
+        id: gate
+        run: |
+          if [ -z "$MEDIUM_COOKIES" ]; then
+            echo "::notice::No MEDIUM_COOKIES secret, so nothing was synced to Medium."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}  # the commit just deployed
+          fetch-depth: 0    # the git history is where essay versions come from
+
+      - uses: actions/setup-python@v7
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - if: steps.gate.outputs.enabled == 'true'
+        run: pip install -r requirements.txt -r requirements-medium.txt
+
+      # The runner's own Google Chrome, in a virtual display: a visible browser
+      # is less likely to be stopped by Medium's bot check than a headless one.
+      - name: Sync
+        if: steps.gate.outputs.enabled == 'true'
+        run: xvfb-run --auto-servernum python medium_sync.py --channel chrome ${{ inputs.force && '--force' || '' }}
+
+      - name: Keep screenshots of what went wrong
+        if: failure() && steps.gate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: medium-screenshots
+          path: medium-screenshots/
+          if-no-files-found: ignore

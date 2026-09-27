@@ -8,7 +8,7 @@ description: Essays by Oliver.    # shown on the home page and in search results
 # Full address of the site, with no trailing slash. It sets the base path of every link.
 #   GitHub Pages project site:  https://<username>.github.io/<repo>
 #   Custom domain:              https://example.com
-base_url: https://olivercastleton.github.io/Oliver-Digests
+base_url: https://oliverdigests.com
 
 # Subject line of "Email me about this". {title} and {version} are filled in.
 email_subject: "Re: {title} (v{version})"
@@ -31,6 +31,14 @@ translate_languages:
   nl: Nederlands
   ja: 日本語
   zh: 中文
+
+# Medium mirror (medium_sync.py and the "Sync to Medium" workflow; see README).
+medium:
+  status: public                # public: publish on Medium; draft: leave them as drafts for you
+  essays: true
+  books: true                   # only books with notes (the ones with a page on the site)
+  book_title: "Notes on {title}"  # Medium title of a book note; {title} and {author} are filled in
+  max_per_run: 10               # stories created or updated per run; the rest wait for the next
 
 # Vault folders that are never published (note templates live here).
 exclude_folders: [templates]
